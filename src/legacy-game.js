@@ -89,6 +89,7 @@
     let camera = { x: 0, y: 0 };
     let mode = "title";
     let mapExpanded = false;
+    let selectedHotbarSlot = 0;
     let questStage = 0;
     let message = "";
     let messageTimer = 0;
@@ -100,6 +101,9 @@
       if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) event.preventDefault();
       keys.add(key);
       if (key === "enter" && (mode === "title" || mode === "lost" || mode === "won")) startGame();
+      if (mode === "playing" && !mapExpanded && /^[1-9]$/.test(key)) {
+        selectedHotbarSlot = Number(key) - 1;
+      }
       if (mode === "playing" && key === "m" && !event.repeat) {
         mapExpanded = !mapExpanded;
         keys.delete(key);
@@ -135,6 +139,7 @@
       messageTimer = 4;
       mode = "playing";
       mapExpanded = false;
+      selectedHotbarSlot = 0;
       blocked = new Set(area().obstacles.map(([x, y]) => `${x},${y}`));
       updateCamera();
     }
@@ -379,9 +384,15 @@
         : areaId === "glen" ? x >= 3 && x <= 7 && y >= 8 && y <= 12
         : false;
       if (water) {
-        ctx.fillStyle = areaId === "ruins" ? "#65777a" : "#397fa2";
+        const waterColor = {
+          village: "#357fa4",
+          woods: "#f05a24",
+          glen: "#8ed9ed",
+          ruins: "#65777a"
+        }[areaId];
+        ctx.fillStyle = waterColor;
         ctx.fillRect(sx, sy, tile, tile);
-        ctx.fillStyle = "#70b0c1";
+        ctx.fillStyle = areaId === "woods" ? "#ffb13b" : areaId === "glen" ? "#d6f7ff" : "#70b0c1";
         if ((x * 3 + y * 7) % 3 === 0) {
           ctx.fillRect(sx + 5 + (x % 4) * 3, sy + 8, 8, 2);
           ctx.fillRect(sx + 17, sy + 23 - (y % 3) * 2, 7, 2);
@@ -399,10 +410,10 @@
             ? (x >= 8 && x <= 11) || (y >= 7 && y <= 10 && x >= 8 && x <= 11)
             : y >= 8 && y <= 11;
       const terrainColors = {
-        village: ["#38644c", "#416c50", "#9a865e"],
-        woods: ["#294e3e", "#315942", "#877552"],
-        glen: ["#366457", "#3d7060", "#8f8960"],
-        ruins: ["#545c50", "#626b59", "#81775c"]
+        village: ["#c7e86e", "#d5f27b", "#b68650"],
+        woods: ["#583744", "#68404a", "#8c493b"],
+        glen: ["#d8e9fa", "#e7f4ff", "#a7cde5"],
+        ruins: ["#e5b267", "#efc478", "#ba854d"]
       };
       const palette = terrainColors[area().terrain];
       ctx.fillStyle = road ? palette[2] : ((x * 7 + y * 13) % 5 === 0 ? palette[1] : palette[0]);
@@ -436,28 +447,62 @@
         ctx.fillRect(sx, sy + 1, tile, 3);
         ctx.fillRect(sx, sy + 28, tile, 3);
       } else if (road) {
-        ctx.fillStyle = areaId === "ruins" ? "#a79b79" : "#aa9568";
+        ctx.fillStyle = {
+          village: "#b68650",
+          woods: "#8c493b",
+          glen: "#a7cde5",
+          ruins: "#ba854d"
+        }[areaId];
         if ((x + y) % 4 === 0) ctx.fillRect(sx + 8, sy + 13, 4, 2);
         if ((x * 3 + y) % 7 === 0) ctx.fillRect(sx + 21, sy + 24, 3, 2);
-      } else if (areaId !== "ruins") {
+      } else if (areaId === "village") {
         const seed = (x * 17 + y * 29) % 11;
-        ctx.fillStyle = seed < 3 ? "#4c873b" : seed < 7 ? "#79a83f" : "#a4b847";
+        ctx.fillStyle = seed < 3 ? "#9ac54a" : seed < 7 ? "#8dbd46" : "#e8e787";
         ctx.fillRect(sx + 4 + seed % 5, sy + 5 + (seed * 3) % 6, 4, 2);
         ctx.fillRect(sx + 18 + (seed * 2) % 8, sy + 17 + seed % 7, 3, 3);
-        ctx.fillStyle = "#cfcb64";
+        ctx.fillStyle = "#89aa4b";
         if (seed === 1 || seed === 6) {
           ctx.fillRect(sx + 25, sy + 6 + seed % 6, 2, 2);
           ctx.fillRect(sx + 24, sy + 5 + seed % 6, 2, 2);
           ctx.fillRect(sx + 26, sy + 5 + seed % 6, 2, 2);
         }
         if (seed === 4 || seed === 9) {
-          ctx.fillStyle = "#db79ae";
+          ctx.fillStyle = "#e866b7";
           ctx.fillRect(sx + 7, sy + 21, 2, 2);
           ctx.fillRect(sx + 6, sy + 20, 2, 2);
           ctx.fillRect(sx + 8, sy + 20, 2, 2);
-          ctx.fillStyle = "#f2df8a";
+          ctx.fillStyle = "#fff0b4";
           ctx.fillRect(sx + 7, sy + 20, 1, 1);
         }
+      } else if (areaId === "woods") {
+        ctx.fillStyle = "#d65732";
+        if ((x * 7 + y * 11) % 4 === 0) {
+          ctx.fillRect(sx + 4 + (x % 5), sy + 7 + (y % 4), 7, 2);
+          ctx.fillRect(sx + 10 + (y % 5), sy + 9 + (x % 4), 2, 5);
+        }
+        ctx.fillStyle = "#ffb13b";
+        if ((x * 13 + y * 3) % 6 === 0) ctx.fillRect(sx + 20, sy + 21, 3, 3);
+        if ((x + y) % 7 === 0) ctx.fillRect(sx + 7, sy + 24, 2, 2);
+      } else if (areaId === "glen") {
+        ctx.fillStyle = "#a8d8ef";
+        if ((x * 3 + y * 5) % 3 === 0) {
+          ctx.beginPath();
+          ctx.moveTo(sx + 2, sy + 7);
+          ctx.lineTo(sx + 12, sy + 9);
+          ctx.lineTo(sx + 16, sy + 15);
+          ctx.strokeStyle = "#a8d8ef";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.fillRect(sx + 22, sy + 22, 4, 2);
+        }
+        ctx.fillStyle = "#ffffff";
+        if ((x + y) % 6 === 0) ctx.fillRect(sx + 5, sy + 19, 3, 2);
+      } else if ((x * 3 + y * 5) % 3 === 0) {
+        ctx.fillStyle = "#d59650";
+        ctx.fillRect(sx + 5 + (x % 7), sy + 8, 5, 2);
+        ctx.fillRect(sx + 21, sy + 23 - (y % 5), 4, 2);
+        ctx.fillStyle = "#f7d38c";
+        if ((x + y) % 5 === 0) ctx.fillRect(sx + 13, sy + 14, 2, 2);
       } else if ((x * 3 + y * 5) % 4 === 0) {
         ctx.fillStyle = "#85866a";
         ctx.fillRect(sx + 7, sy + 8, 3, 3);
@@ -479,6 +524,66 @@
         ctx.fillRect(sx + 20, sy + 15, 5, 4);
         return;
       }
+      if (areaId === "village") {
+        ctx.fillStyle = "#6a4770";
+        ctx.fillRect(sx + 14, sy + 16, 5, 15);
+        ctx.fillStyle = "#e966b4";
+        ctx.fillRect(sx + 3, sy + 7, 11, 13);
+        ctx.fillRect(sx + 9, sy + 3, 15, 17);
+        ctx.fillRect(sx + 19, sy + 8, 11, 12);
+        ctx.fillStyle = "#f58bcd";
+        ctx.fillRect(sx + 7, sy + 7, 6, 5);
+        ctx.fillRect(sx + 14, sy + 5, 7, 5);
+        ctx.fillStyle = "#ffd2ef";
+        ctx.fillRect(sx + 10, sy + 6, 4, 3);
+        ctx.fillRect(sx + 20, sy + 10, 4, 3);
+        if ((x + y) % 3 === 0) {
+          ctx.fillStyle = "#45a99e";
+          ctx.fillRect(sx + 8, sy + 12, 13, 12);
+          ctx.fillStyle = "#89e0ca";
+          ctx.fillRect(sx + 11, sy + 13, 7, 5);
+          ctx.fillStyle = "#497a52";
+          ctx.fillRect(sx + 14, sy + 21, 5, 10);
+        }
+        return;
+      }
+      if (areaId === "woods") {
+        ctx.fillStyle = "#382a37";
+        ctx.fillRect(sx + 3, sy + 20, 26, 11);
+        ctx.fillStyle = "#e24e24";
+        ctx.fillRect(sx + 8, sy + 23, 5, 6);
+        ctx.fillRect(sx + 19, sy + 22, 5, 7);
+        ctx.fillStyle = "#642e3b";
+        ctx.beginPath();
+        ctx.moveTo(sx + 2, sy + 23);
+        ctx.lineTo(sx + 8, sy + 7);
+        ctx.lineTo(sx + 13, sy + 19);
+        ctx.lineTo(sx + 19, sy + 3);
+        ctx.lineTo(sx + 29, sy + 23);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#a54439";
+        ctx.fillRect(sx + 8, sy + 15, 3, 3);
+        ctx.fillRect(sx + 19, sy + 12, 3, 4);
+        return;
+      }
+      if (areaId === "glen") {
+        ctx.fillStyle = "#9bbbd8";
+        ctx.fillRect(sx + 4, sy + 23, 24, 6);
+        ctx.fillStyle = "#71a9d6";
+        ctx.beginPath();
+        ctx.moveTo(sx + 4, sy + 24);
+        ctx.lineTo(sx + 12, sy + 4);
+        ctx.lineTo(sx + 16, sy + 17);
+        ctx.lineTo(sx + 23, sy + 1);
+        ctx.lineTo(sx + 28, sy + 24);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#e6f8ff";
+        ctx.fillRect(sx + 11, sy + 7, 3, 9);
+        ctx.fillRect(sx + 22, sy + 4, 3, 10);
+        return;
+      }
       if (areaId !== "ruins") {
         ctx.fillStyle = "#25402e";
         ctx.fillRect(sx + 3, sy + 19, 26, 12);
@@ -496,11 +601,11 @@
         return;
       }
       if (areaId === "ruins") {
-        ctx.fillStyle = "#3d443d";
+        ctx.fillStyle = "#8e603c";
         ctx.fillRect(sx + 2, sy + 5, 28, 25);
-        ctx.fillStyle = "#85816d";
+        ctx.fillStyle = "#b9814d";
         ctx.fillRect(sx + 5, sy + 2, 22, 24);
-        ctx.fillStyle = "#b2a584";
+        ctx.fillStyle = "#e1b875";
         ctx.fillRect(sx + 10, sy + 4, 12, 4);
         return;
       }
@@ -792,20 +897,20 @@
     function drawMountainTile(x, y) {
       const sx = x * tile - camera.x;
       const sy = y * tile - camera.y;
-      ctx.fillStyle = "#4b4c50";
+      ctx.fillStyle = "#875e42";
       ctx.fillRect(sx, sy + 18, tile, 14);
-      ctx.fillStyle = "#777671";
+      ctx.fillStyle = "#bc8553";
       ctx.fillRect(sx + 2, sy + 10, 28, 18);
-      ctx.fillStyle = "#9b9687";
+      ctx.fillStyle = "#d5a26a";
       ctx.fillRect(sx + 7, sy + 4, 18, 18);
-      ctx.fillStyle = "#c9c3ad";
+      ctx.fillStyle = "#efd195";
       ctx.fillRect(sx + 13, sy + 1, 9, 9);
-      ctx.fillStyle = "#e0dac4";
+      ctx.fillStyle = "#fff0c5";
       if ((x + y) % 3 !== 0) {
         ctx.fillRect(sx + 15, sy + 1, 6, 4);
         ctx.fillRect(sx + 11, sy + 7, 5, 3);
       }
-      ctx.fillStyle = "#5f615f";
+      ctx.fillStyle = "#976945";
       ctx.fillRect(sx + 21, sy + 17, 4, 7);
       ctx.fillRect(sx + 5, sy + 23, 6, 3);
     }
@@ -823,6 +928,85 @@
       if (!secretChest.opened) {
         ctx.fillStyle = "#fff0aa";
         ctx.fillRect(x - 2, y - 11, 4, 4);
+      }
+    }
+
+    function drawQuickbar() {
+      const slotSize = 28;
+      const gap = 2;
+      const startX = (canvas.width - (slotSize * 9 + gap * 8)) / 2;
+      const slotY = 286;
+      const heartPixels = ["01100110", "11111111", "11111111", "01111110", "00111100", "00011000"];
+
+      for (let heart = 0; heart < 6; heart++) {
+        const heartX = 192 + heart * 16;
+        const heartY = 271;
+        ctx.fillStyle = heart < player.hp ? "#ed4e55" : "#51525a";
+        for (let row = 0; row < heartPixels.length; row++) {
+          for (let column = 0; column < heartPixels[row].length; column++) {
+            if (heartPixels[row][column] === "1") ctx.fillRect(heartX + column, heartY + row, 1, 1);
+          }
+        }
+        ctx.fillStyle = "#ffb0a2";
+        if (heart < player.hp) {
+          ctx.fillRect(heartX + 2, heartY + 2, 2, 1);
+          ctx.fillRect(heartX + 10, heartY + 2, 2, 1);
+        }
+      }
+
+      for (let slot = 0; slot < 9; slot++) {
+        const slotX = startX + slot * (slotSize + gap);
+        ctx.fillStyle = "#171c27";
+        ctx.fillRect(slotX, slotY, slotSize, slotSize);
+        ctx.fillStyle = slot === selectedHotbarSlot ? "#f2ca70" : "#7a806d";
+        ctx.fillRect(slotX, slotY, slotSize, 2);
+        ctx.fillRect(slotX, slotY + slotSize - 2, slotSize, 2);
+        ctx.fillRect(slotX, slotY, 2, slotSize);
+        ctx.fillRect(slotX + slotSize - 2, slotY, 2, slotSize);
+        ctx.fillStyle = "#c7d1bb";
+        ctx.font = "7px monospace";
+        ctx.fillText(String(slot + 1), slotX + 3, slotY + 8);
+
+        if (slot === 0) {
+          ctx.fillStyle = "#e4ab43";
+          ctx.fillRect(slotX + 12, slotY + 9, 4, 12);
+          ctx.fillRect(slotX + 8, slotY + 13, 12, 4);
+          ctx.fillStyle = "#fff0a1";
+          ctx.fillRect(slotX + 13, slotY + 10, 2, 10);
+          ctx.fillRect(slotX + 9, slotY + 14, 10, 2);
+        } else if (slot === 1) {
+          ctx.fillStyle = "#f0d59a";
+          ctx.fillRect(slotX + 11, slotY + 9, 8, 2);
+          ctx.fillRect(slotX + 10, slotY + 11, 10, 11);
+          ctx.fillRect(slotX + 12, slotY + 7, 6, 2);
+          ctx.fillStyle = "#8a3555";
+          ctx.fillRect(slotX + 12, slotY + 15, 6, 5);
+          ctx.fillStyle = "#f58bcd";
+          ctx.fillRect(slotX + 13, slotY + 13, 3, 3);
+          if (player.tonics > 0) {
+            ctx.fillStyle = "#fff0bd";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "right";
+            ctx.fillText(String(player.tonics), slotX + slotSize - 3, slotY + slotSize - 4);
+            ctx.textAlign = "left";
+          }
+        } else if (slot === 2 && questStage >= 2) {
+          ctx.fillStyle = "#e8c86e";
+          ctx.fillRect(slotX + 13, slotY + 8, 3, 4);
+          ctx.fillRect(slotX + 10, slotY + 12, 9, 7);
+          ctx.fillRect(slotX + 12, slotY + 19, 5, 2);
+          ctx.fillStyle = "#fff1a8";
+          ctx.fillRect(slotX + 13, slotY + 13, 3, 4);
+        } else if (slot === 3) {
+          ctx.fillStyle = "#507568";
+          ctx.fillRect(slotX + 10, slotY + 12, 10, 9);
+          ctx.fillRect(slotX + 8, slotY + 15, 3, 4);
+          ctx.fillRect(slotX + 19, slotY + 15, 3, 4);
+          ctx.fillStyle = "#c5e78b";
+          ctx.fillRect(slotX + 12, slotY + 10, 6, 8);
+          ctx.fillStyle = "#fff0a1";
+          ctx.fillRect(slotX + 14, slotY + 13, 2, 3);
+        }
       }
     }
 
@@ -1231,24 +1415,16 @@
       }
       drawCompanion(player.x, player.y, player.direction, animationTime);
 
-      drawPanel(8, 8, 176, 43);
+      drawPanel(8, 8, 126, 24);
       ctx.fillStyle = "#111719";
-      ctx.fillRect(22, 15, 119, 10);
-      ctx.fillRect(22, 31, 119, 8);
-      ctx.fillStyle = "#a92d32";
-      ctx.fillRect(24, 17, 115 * (player.hp / 6), 6);
-      ctx.fillStyle = "#f05a4e";
-      ctx.fillRect(24, 17, 115 * (player.hp / 6), 3);
+      ctx.fillRect(21, 16, 98, 8);
       ctx.fillStyle = "#3b8d47";
-      ctx.fillRect(24, 33, 115 * (player.energy / 100), 4);
+      ctx.fillRect(22, 17, 96 * (player.energy / 100), 6);
       ctx.fillStyle = "#8bd65e";
-      ctx.fillRect(24, 33, 115 * (player.energy / 100), 2);
+      ctx.fillRect(22, 17, 96 * (player.energy / 100), 2);
       ctx.fillStyle = "#f5e8bd";
       ctx.font = "8px monospace";
-      ctx.fillText("VIT", 145, 23);
-      ctx.fillText("KI", 145, 39);
-      ctx.fillStyle = "#f2ca70";
-      ctx.fillText(`TONIC ${player.tonics}`, 24, 48);
+      ctx.fillText("KI", 10, 23);
 
       drawPanel(190, 8, 214, 43);
       ctx.fillStyle = "#f2ca70";
@@ -1263,14 +1439,14 @@
       const nearGuide = areaId === "village" && near(player, guide, 62);
       const nearRelic = areaId === "ruins" && near(player, relic, 62);
       const nearChest = areaId === "glen" && near(player, secretChest, 62);
-      if (nearGuide ||
+      if (messageTimer <= 0 && (nearGuide ||
           (nearRelic && questStage === 1) ||
           (nearChest && !secretChest.opened) ||
-          (areaId === "woods" && player.x > 26 * tile && Math.abs(player.y / tile - 10) < 1)) {
-        drawPanel(145, 275, 190, 31);
+          (areaId === "woods" && player.x > 26 * tile && Math.abs(player.y / tile - 10) < 1))) {
+        drawPanel(145, 239, 190, 28);
         ctx.fillStyle = "#fff0aa";
         ctx.font = "10px monospace";
-        ctx.fillText(areaId === "woods" && player.x > 26 * tile ? "EAST  SUNKEN RUINS" : "E  TALK / INTERACT", 163, 295);
+        ctx.fillText(areaId === "woods" && player.x > 26 * tile ? "EAST  SUNKEN RUINS" : "E  TALK / INTERACT", 163, 257);
       }
       if (messageTimer > 0) {
         drawPanel(46, 229, 388, 41);
@@ -1281,6 +1457,7 @@
         if (dialogue[1]) ctx.fillText(dialogue[1], 58, 259);
       }
       drawAreaMap();
+      if (!mapExpanded) drawQuickbar();
 
       if (mode === "won" || mode === "lost") {
         ctx.fillStyle = "#101820bb";

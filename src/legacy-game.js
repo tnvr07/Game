@@ -800,111 +800,68 @@ export function createLegacyGame(canvas, onRender, titleBackgroundUrl) {
     function drawPlayer(x, y, facing) {
       const sx = Math.round(x - camera.x);
       const sy = Math.round(y - camera.y);
-      const horizontal = facing === "left" || facing === "right";
-      const sign = facing === "left" || facing === "up" ? -1 : 1;
+      const isLeft = facing === "left";
+      const isRight = facing === "right";
 
-      ctx.fillStyle = "#1c2526";
+      ctx.fillStyle = "#2a2c2f";
       ctx.beginPath();
-      ctx.ellipse(sx, sy + 7, 11, 5, 0, 0, Math.PI * 2);
+      ctx.ellipse(sx, sy + 10, 11, 5, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = "#252530";
-      if (horizontal) {
-        ctx.fillRect(sx - 5, sy - 24, 10, 31);
-        ctx.fillRect(sx - 10, sy - 8, 5, 12);
+      ctx.fillStyle = "#f4f3ef";
+      ctx.fillRect(sx - 5, sy + 3, 4, 9);
+      ctx.fillRect(sx + 1, sy + 3, 4, 9);
+
+      ctx.fillStyle = "#382f2d";
+      ctx.fillRect(sx - 6, sy + 11, 6, 2);
+      ctx.fillRect(sx + 1, sy + 11, 6, 2);
+
+      ctx.fillStyle = "#d7c598";
+      ctx.fillRect(sx - 10, sy - 2, 3, 8);
+      ctx.fillRect(sx + 7, sy - 2, 3, 8);
+
+      ctx.fillStyle = "#4f84ea";
+      ctx.fillRect(sx - 8, sy - 8, 16, 12);
+      ctx.fillStyle = "#dfe8ff";
+      ctx.fillRect(sx - 6, sy - 7, 12, 3);
+
+      ctx.fillStyle = "#d5b97b";
+      ctx.fillRect(sx - 8, sy + 3, 16, 2);
+
+      ctx.fillStyle = "#f3efe8";
+      ctx.fillRect(sx - 7, sy - 18, 14, 12);
+
+      ctx.fillStyle = "#2a2e34";
+      ctx.fillRect(sx - 8, sy - 20, 16, 4);
+      ctx.fillRect(sx - 7, sy - 22, 4, 4);
+      ctx.fillRect(sx + 3, sy - 22, 4, 4);
+      ctx.fillRect(sx - 3, sy - 23, 6, 3);
+
+      ctx.fillStyle = "#2c3438";
+      if (isLeft) {
+        ctx.fillRect(sx - 4, sy - 15, 2, 2);
+        ctx.fillRect(sx + 2, sy - 15, 2, 2);
+      } else if (isRight) {
+        ctx.fillRect(sx - 2, sy - 15, 2, 2);
+        ctx.fillRect(sx + 4, sy - 15, 2, 2);
       } else {
-        ctx.fillRect(sx - 8, sy - 19, 16, 24);
-        ctx.fillRect(sx - 11, sy - 5, 5, 10);
-        ctx.fillRect(sx + 6, sy - 5, 5, 10);
+        ctx.fillRect(sx - 3, sy - 15, 2, 2);
+        ctx.fillRect(sx + 1, sy - 15, 2, 2);
       }
 
-      ctx.fillStyle = "#334446";
-      ctx.fillRect(sx - 9, sy + 2, 7, 12);
-      ctx.fillRect(sx + 2, sy + 2, 7, 12);
-      ctx.fillStyle = "#c9c5ae";
-      ctx.fillRect(sx - 9, sy + 11, 7, 4);
-      ctx.fillRect(sx + 2, sy + 11, 7, 4);
+      ctx.fillStyle = "#d78667";
+      ctx.fillRect(sx - 1, sy - 11, 2, 1);
 
-      ctx.fillStyle = "#123c3c";
-      ctx.fillRect(sx - 10, sy - 15, 20, 18);
-      ctx.fillStyle = "#17645f";
-      ctx.fillRect(sx - 8, sy - 15, 16, 13);
-      ctx.fillStyle = "#278b7c";
-      ctx.fillRect(sx - 6, sy - 13, 12, 7);
-      ctx.fillStyle = "#d8d1ad";
-      ctx.fillRect(sx - 8, sy - 7, 16, 3);
-      ctx.fillStyle = "#b64e43";
-      ctx.fillRect(sx - 8, sy - 5, 16, 2);
-      ctx.fillStyle = "#e2d7b2";
-      ctx.fillRect(sx - 7, sy - 1, 14, 2);
-      ctx.fillStyle = "#d8d1ad";
-      ctx.fillRect(sx - 8, sy + 2, 16, 4);
-      ctx.fillStyle = "#bd5144";
-      ctx.fillRect(sx - 7, sy + 3, 14, 2);
-      ctx.fillStyle = "#27766d";
-      ctx.fillRect(sx - 10, sy - 13, 4, 10);
-      ctx.fillRect(sx + 6, sy - 13, 4, 10);
+      ctx.fillStyle = "#d7c598";
+      ctx.fillRect(sx - 10, sy - 16, 3, 5);
+      ctx.fillRect(sx + 7, sy - 16, 3, 5);
 
-      ctx.fillStyle = "#d4b98d";
-      ctx.fillRect(sx - 5, sy - 24, 10, 9);
-      ctx.fillStyle = "#222a2c";
-      ctx.fillRect(sx - 7, sy - 27, 14, 7);
-      ctx.fillRect(sx - 5, sy - 31, 10, 6);
-      ctx.fillRect(sx - 2, sy - 35, 5, 6);
-      ctx.fillRect(sx + 3, sy - 32, 4, 4);
-      ctx.fillStyle = "#177268";
-      ctx.fillRect(sx - 6, sy - 26, 12, 4);
-      ctx.fillStyle = "#d4b98d";
-      if (facing === "left") {
-        ctx.fillRect(sx - 6, sy - 22, 3, 2);
-      } else if (facing === "right") {
-        ctx.fillRect(sx + 3, sy - 22, 3, 2);
-      } else {
-        ctx.fillStyle = "#343436";
-        ctx.fillRect(sx - 5, sy - 22, 10, 3);
-      }
-
-      ctx.fillStyle = "#b8b29b";
-      ctx.fillRect(sx - 13, sy - 12, 5, 8);
-      ctx.fillRect(sx + 8, sy - 12, 5, 8);
-      ctx.fillStyle = "#278b7c";
-      ctx.fillRect(sx - 12, sy - 11, 4, 5);
-      ctx.fillRect(sx + 8, sy - 11, 4, 5);
-      ctx.fillStyle = "#d7c78f";
-      ctx.fillRect(sx - 12, sy - 5, 4, 2);
-      ctx.fillRect(sx + 8, sy - 5, 4, 2);
-
-      if (horizontal) {
-        const staffY = sy - 25;
-        ctx.fillStyle = "#393329";
-        ctx.fillRect(sx - 25, staffY, 50, 2);
-        ctx.fillStyle = "#a9a081";
-        ctx.fillRect(sx + sign * 22, staffY - 2, 4, 6);
-        ctx.fillStyle = "#d5c69a";
-        ctx.fillRect(sx + sign * 26, staffY - 1, 3, 4);
-        const pennantX = sx - sign * 23;
-        ctx.fillStyle = "#236a58";
-        ctx.fillRect(pennantX - 2, staffY - 8, 5, 8);
-        ctx.fillRect(pennantX - 1, staffY - 12, 8, 5);
-        ctx.fillStyle = "#69a16d";
-        ctx.fillRect(pennantX + 3, staffY - 10, 7, 4);
-        ctx.fillRect(pennantX + 8, staffY - 8, 5, 3);
-        ctx.fillStyle = "#9ab77d";
-        ctx.fillRect(pennantX + 10, staffY - 7, 4, 2);
-      } else {
-        const staffX = sx + 15;
-        ctx.fillStyle = "#393329";
-        ctx.fillRect(staffX, sy - 38, 2, 48);
-        ctx.fillStyle = "#a9a081";
-        ctx.fillRect(staffX - 2, sy - 39, 6, 4);
-        ctx.fillStyle = "#d5c69a";
-        ctx.fillRect(staffX - 1, sy - 43, 4, 4);
-        ctx.fillStyle = "#236a58";
-        ctx.fillRect(staffX + 2, sy - 34, 8, 5);
-        ctx.fillStyle = "#69a16d";
-        ctx.fillRect(staffX + 7, sy - 33, 6, 4);
-        ctx.fillStyle = "#9ab77d";
-        ctx.fillRect(staffX + 11, sy - 32, 4, 3);
+      if (isLeft) {
+        ctx.fillStyle = "#4f84ea";
+        ctx.fillRect(sx - 8, sy - 2, 3, 2);
+      } else if (isRight) {
+        ctx.fillStyle = "#4f84ea";
+        ctx.fillRect(sx + 5, sy - 2, 3, 2);
       }
     }
 

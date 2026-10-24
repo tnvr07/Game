@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Starfall Trail</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Courier New", monospace;
+      background: #101820;
+      color: #f4edcc;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: radial-gradient(ellipse at center, #233b43 0%, #101820 72%);
+    }
+
+    main { width: min(100%, 760px); }
+
+    h1 {
+      margin: 0 0 12px;
+      color: #f2ca70;
+      font-size: clamp(1.25rem, 5vw, 2rem);
+      letter-spacing: .12em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .frame {
+      padding: 10px;
+      border: 4px solid #718277;
+      background: #1a292a;
+      box-shadow: 0 12px 40px #0008, inset 0 0 0 3px #344743;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      background: #315b4b;
+      image-rendering: pixelated;
+    }
+
+    .help {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px 20px;
+      margin: 12px 0 0;
+      color: #c7d1bb;
+      font-size: .85rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    kbd {
+      padding: 2px 5px;
+      border: 1px solid #718277;
+      border-radius: 3px;
+      background: #263634;
+      color: #f2ca70;
+      font: inherit;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Starfall Trail</h1>
+    <div class="frame">
+      <canvas id="game" width="640" height="360" aria-label="Starfall Trail game"></canvas>
+    </div>
+    <p class="help">
+      <span><kbd>WASD</kbd>/<kbd>←↑↓→</kbd> Move</span>
+      <span><kbd>Z</kbd> Pulse</span>
+      <span><kbd>E</kbd> Activate</span>
+      <span><kbd>Enter</kbd> Start / restart</span>
+    </p>
+  </main>
+  <script>
+    "use strict";
+
+    const canvas = document.querySelector("#game");
+    const ctx = canvas.getContext("2d");
+    const tile = 32;
+    const world = { width: 40, height: 24 };
+    const keys = new Set();
+    const blocked = new Set();
+    const beacons = [
+      { x: 5, y: 5, active: false },
+      { x: 34, y: 5, active: false },
+      { x: 20, y: 19, active: false }
+    ];
+    const rocks = [
+      [8, 3], [9, 3], [8, 4], [14, 7], [15, 7], [25, 4], [26, 4],
+      [30, 10], [31, 10], [10, 15], [11, 15], [27, 18], [28, 18],
+      [4, 18], [5, 18], [35, 15], [36, 15], [18, 4], [19, 4]
+    ];
+    const player = { x: 20 * tile, y: 11 * tile, direction: "down", hp: 5, pulse: 0, hurt: 0 };
+    const enemies = [
+      { x: 13 * tile, y: 5 * tile, hp: 2, phase: 0 },
+      { x: 28 * tile, y: 14 * tile, hp: 2, phase: 1.5 },
+      { x: 17 * tile, y: 20 * tile, hp: 2, phase: 3 }
+    ];
+    let camera = { x: 0, y: 0 };
+    let mode = "title";
+    let message = "Find the three sky beacons.";
+    let messageTimer = 0;
+    let lastTime = 0;
+
+    for (const [x, y] of rocks) blocked.add(`${x},${y}`);
+
+    window.addEventListener("keydown", (event) => {
+      const key = event.key.toLowerCase();
+      if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) event.preventDefault();
+      keys.add(key);
+      if (key === "enter" && mode !== "playing") startGame();
+      if (mode === "playing" && key === "e" && !event.repeat) activateBeacon();
+      if (mode === "playing" && key === "z" && !event.repeat) pulse();
+    });
+    window.addEventListener("keyup", (event) => keys.delete(event.key.toLowerCase()));
+    window.addEventListener("blur", () => keys.clear());
+
+    function startGame() {
+      player.x = 20 * tile;
+      player.y = 11 * tile;
+      player.hp = 5;
+      player.hurt = 0;
+      for (const beacon of beacons) beacon.active = false;
+      enemies.splice(0, enemies.length,
+        { x: 13 * tile, y: 5 * tile, hp: 2, phase: 0 },
+        { x: 28 * tile, y: 14 * tile, hp: 2, phase: 1.5 },
+        { x: 17 * tile, y: 20 * tile, hp: 2, phase: 3 });
+      message = "Find the three sky beacons.";
+      mode = "playing";
+    }
+
+    function isBlocked(x, y) {
+      const tx = Math.floor(x / tile);
+      const ty = Math.floor(y / tile);
+      return tx < 0 || ty < 0 || tx >= world.width || ty >= world.height || blocked.has(`${tx},${ty}`);
+    }
+
+    function movePlayer(dx, dy) {
+      const radius = 9;
+      const nx = player.x + dx;
+      const ny = player.y + dy;
+      if (!isBlocked(nx - radius, player.y) && !isBlocked(nx + radius, player.y)) player.x = nx;
+      if (!isBlocked(player.x, ny - radius) && !isBlocked(player.x, ny + radius)) player.y = ny;
+    }
+
+    function activateBeacon() {
+      const beacon = beacons.find((item) => !item.active &&
+        Math.hypot(item.x * tile + 16 - player.x, item.y * tile + 16 - player.y) < 48);
+      if (!beacon) {
+        setMessage("Get closer to a sky beacon.");
+        return;
+      }
+      beacon.active = true;
+      const count = beacons.filter((item) => item.active).length;
+      if (count === beacons.length) {
+        mode = "won";
+        message = "The trail shines again!";
+      } else {
+        setMessage(`Beacon lit. ${beacons.length - count} remain.`);
+      }
+    }
+
+    function pulse() {
+      player.pulse = 0.22;
+      let hit = false;
+      for (let index = enemies.length - 1; index >= 0; index--) {
+        const enemy = enemies[index];
+        const dx = enemy.x - player.x;
+        const dy = enemy.y - player.y;
+        const facing = player.direction === "left" ? dx < 8 && dx > -58 && Math.abs(dy) < 26
+          : player.direction === "right" ? dx > -8 && dx < 58 && Math.abs(dy) < 26
+          : player.direction === "up" ? dy < 8 && dy > -58 && Math.abs(dx) < 26
+          : dy > -8 && dy < 58 && Math.abs(dx) < 26;
+        if (facing) {
+          enemy.hp--;
+          hit = true;
+          if (enemy.hp <= 0) enemies.splice(index, 1);
+          else {
+            const length = Math.max(1, Math.hypot(dx, dy));
+            enemy.x += (dx / length) * 18;
+            enemy.y += (dy / length) * 18;
+          }
+        }
+      }
+      if (!hit) setMessage("Your pulse passes through the quiet air.");
+    }
+
+    function setMessage(text) {
+      message = text;
+      messageTimer = 2.2;
+    }
+
+    function update(dt) {
+      if (mode !== "playing") return;
+      let dx = 0;
+      let dy = 0;
+      if (keys.has("arrowleft") || keys.has("a")) dx--;
+      if (keys.has("arrowright") || keys.has("d")) dx++;
+      if (keys.has("arrowup") || keys.has("w")) dy--;
+      if (keys.has("arrowdown") || keys.has("s")) dy++;
+      if (dx || dy) {
+        const length = Math.hypot(dx, dy);
+        dx = dx / length * 120 * dt;
+        dy = dy / length * 120 * dt;
+        if (Math.abs(dx) > Math.abs(dy)) player.direction = dx < 0 ? "left" : "right";
+        else player.direction = dy < 0 ? "up" : "down";
+        movePlayer(dx, dy);
+      }
+
+      player.pulse = Math.max(0, player.pulse - dt);
+      player.hurt = Math.max(0, player.hurt - dt);
+      messageTimer = Math.max(0, messageTimer - dt);
+
+      for (const enemy of enemies) {
+        enemy.phase += dt;
+        const distance = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+        if (distance < 155 && distance > 25) {
+          const speed = distance < 45 ? 0 : 35;
+          const ex = (player.x - enemy.x) / distance * speed * dt;
+          const ey = (player.y - enemy.y) / distance * speed * dt;
+          if (!isBlocked(enemy.x + ex, enemy.y)) enemy.x += ex;
+          if (!isBlocked(enemy.x, enemy.y + ey)) enemy.y += ey;
+        } else if (distance < 25 && player.hurt === 0) {
+          player.hp--;
+          player.hurt = 0.8;
+          if (player.hp <= 0) {
+            mode = "lost";
+            message = "The trail can be tried again.";
+          } else {
+            setMessage("A duskling bumps you back!");
+          }
+        }
+      }
+
+      camera.x = Math.max(0, Math.min(world.width * tile - canvas.width, player.x - canvas.width / 2));
+      camera.y = Math.max(0, Math.min(world.height * tile - canvas.height, player.y - canvas.height / 2));
+    }
+
+    function drawTile(x, y) {
+      const screenX = x * tile - camera.x;
+      const screenY = y * tile - camera.y;
+      const path = (x > 17 && x < 22) || (y > 9 && y < 13) ||
+        (Math.abs(x - 5) + Math.abs(y - 5) < 7) ||
+        (Math.abs(x - 34) + Math.abs(y - 5) < 7) ||
+        (Math.abs(x - 20) + Math.abs(y - 19) < 7);
+      ctx.fillStyle = path ? "#8b7957" : ((x * 7 + y * 13) % 5 === 0 ? "#38644c" : "#315b49");
+      ctx.fillRect(screenX, screenY, tile, tile);
+      if (!path && (x * 3 + y * 5) % 7 === 0) {
+        ctx.fillStyle = "#6b9a5d";
+        ctx.fillRect(screenX + 7, screenY + 8, 3, 3);
+        ctx.fillRect(screenX + 22, screenY + 23, 2, 3);
+      }
+    }
+
+    function drawBeacon(beacon) {
+      const x = beacon.x * tile - camera.x + 16;
+      const y = beacon.y * tile - camera.y + 16;
+      ctx.fillStyle = "#263c39";
+      ctx.fillRect(x - 9, y + 8, 18, 7);
+      ctx.fillStyle = beacon.active ? "#ffe99a" : "#819c88";
+      ctx.fillRect(x - 5, y - 8, 10, 17);
+      ctx.fillStyle = beacon.active ? "#fff7cf" : "#a9c8ad";
+      ctx.fillRect(x - 2, y - 15, 4, 8);
+      ctx.fillStyle = beacon.active ? "#f4ca62" : "#718c78";
+      ctx.fillRect(x - 11, y - 12, 5, 4);
+      ctx.fillRect(x + 6, y - 12, 5, 4);
+    }
+
+    function drawCharacter(x, y, color, facing, isPlayer) {
+      const sx = Math.round(x - camera.x);
+      const sy = Math.round(y - camera.y);
+      ctx.fillStyle = "#26352f";
+      ctx.fillRect(sx - 8, sy + 5, 16, 10);
+      ctx.fillStyle = color;
+      ctx.fillRect(sx - 7, sy - 8, 14, 14);
+      ctx.fillStyle = isPlayer ? "#f2d1a2" : "#c6d4a0";
+      ctx.fillRect(sx - 5, sy - 15, 10, 9);
+      ctx.fillStyle = "#273431";
+      const eyeX = facing === "left" ? -4 : facing === "right" ? 2 : -3;
+      ctx.fillRect(sx + eyeX, sy - 12, 2, 2);
+      if (isPlayer) {
+        ctx.fillStyle = "#e4b852";
+        ctx.fillRect(sx - 9, sy - 4, 18, 4);
+        if (player.pulse > 0) {
+          ctx.strokeStyle = "#fff0aa";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.ellipse(sx, sy, 28, 19, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      } else {
+        ctx.fillStyle = "#d6ed96";
+        ctx.fillRect(sx - 5, sy - 12, 2, 2);
+        ctx.fillRect(sx + 3, sy - 12, 2, 2);
+      }
+    }
+
+    function drawPanel(x, y, width, height) {
+      ctx.fillStyle = "#182624";
+      ctx.fillRect(x, y, width, height);
+      ctx.strokeStyle = "#9ca889";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, y + 1, width - 2, height - 2);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (mode === "title") {
+        ctx.fillStyle = "#315b49";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < 8; i++) {
+          ctx.fillStyle = i % 2 ? "#38644c" : "#416c50";
+          ctx.fillRect(i * 96 - 20, 210 + (i % 3) * 14, 100, 150);
+        }
+        ctx.fillStyle = "#f4d477";
+        ctx.font = "bold 36px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("STARFALL TRAIL", 320, 112);
+        ctx.fillStyle = "#f4edcc";
+        ctx.font = "16px monospace";
+        ctx.fillText("A little journey to relight the old paths", 320, 148);
+        drawCharacter(320, 220, "#557fa0", "down", true);
+        ctx.fillStyle = "#f4edcc";
+        ctx.fillText("PRESS ENTER TO BEGIN", 320, 300);
+        ctx.textAlign = "left";
+        return;
+      }
+
+      const startX = Math.floor(camera.x / tile);
+      const startY = Math.floor(camera.y / tile);
+      for (let y = startY; y <= startY + 12; y++) {
+        for (let x = startX; x <= startX + 21; x++) drawTile(x, y);
+      }
+      for (const [x, y] of rocks) {
+        const sx = x * tile - camera.x;
+        const sy = y * tile - camera.y;
+        ctx.fillStyle = "#344640";
+        ctx.fillRect(sx + 2, sy + 11, 28, 19);
+        ctx.fillStyle = "#68796a";
+        ctx.fillRect(sx + 6, sy + 7, 20, 18);
+        ctx.fillStyle = "#85917a";
+        ctx.fillRect(sx + 11, sy + 5, 8, 4);
+      }
+      for (const beacon of beacons) drawBeacon(beacon);
+
+      const guideX = 22 * tile - camera.x + 16;
+      const guideY = 11 * tile - camera.y + 16;
+      ctx.fillStyle = "#3f6f7a";
+      ctx.fillRect(guideX - 8, guideY - 8, 16, 22);
+      ctx.fillStyle = "#e2bd8b";
+      ctx.fillRect(guideX - 6, guideY - 15, 12, 10);
+      ctx.fillStyle = "#202e30";
+      ctx.fillRect(guideX - 3, guideY - 12, 2, 2);
+      ctx.fillRect(guideX + 2, guideY - 12, 2, 2);
+
+      for (const enemy of enemies) drawCharacter(enemy.x, enemy.y, "#695c78", "down", false);
+      if (player.hurt > 0 && Math.floor(player.hurt * 12) % 2 === 0) {
+        // Briefly blink after taking a hit.
+      } else {
+        drawCharacter(player.x, player.y, "#557fa0", player.direction, true);
+      }
+
+      drawPanel(8, 8, 210, 40);
+      ctx.fillStyle = "#f4edcc";
+      ctx.font = "14px monospace";
+      ctx.fillText("TRAILKEEPER", 18, 25);
+      ctx.fillStyle = "#d87366";
+      ctx.fillText("♥".repeat(player.hp) + "·".repeat(5 - player.hp), 18, 41);
+      const lit = beacons.filter((beacon) => beacon.active).length;
+      ctx.fillStyle = "#f2ca70";
+      ctx.fillText(`BEACONS ${lit}/3`, 111, 41);
+
+      drawPanel(226, 8, 406, 40);
+      ctx.fillStyle = "#f4edcc";
+      ctx.font = "12px monospace";
+      ctx.fillText(messageTimer > 0 || mode !== "playing" ? message : "The guide: Three beacons keep the old road bright.", 238, 32);
+
+      const nearbyBeacon = beacons.some((beacon) => !beacon.active &&
+        Math.hypot(beacon.x * tile + 16 - player.x, beacon.y * tile + 16 - player.y) < 58);
+      if (nearbyBeacon && mode === "playing") {
+        drawPanel(218, 310, 204, 34);
+        ctx.fillStyle = "#fff0aa";
+        ctx.fillText("E  LIGHT BEACON", 253, 332);
+      }
+
+      if (mode === "won" || mode === "lost") {
+        ctx.fillStyle = "#101820b8";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawPanel(112, 122, 416, 116);
+        ctx.fillStyle = mode === "won" ? "#f2ca70" : "#e3a28b";
+        ctx.textAlign = "center";
+        ctx.font = "bold 24px monospace";
+        ctx.fillText(mode === "won" ? "TRAIL RESTORED!" : "THE TRAIL GROWS QUIET", 320, 165);
+        ctx.fillStyle = "#f4edcc";
+        ctx.font = "15px monospace";
+        ctx.fillText("Press Enter to play again", 320, 202);
+        ctx.textAlign = "left";
+      }
+    }
+
+    function frame(time) {
+      const dt = Math.min(0.04, (time - lastTime) / 1000 || 0);
+      lastTime = time;
+      update(dt);
+      draw();
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

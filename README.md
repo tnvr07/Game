@@ -40,13 +40,8 @@ TypeScript rather than added to the adapter.
 - Talk / interact: `E`
 - Use a fizzy plum tonic: `Q`
 - Expand / close the world map: `M`
-- Select a hotbar slot: `1`–`9`
 - Start or retry: `Enter`
 
 The top-right minimap shows how the four regions connect. Press `M` to expand
 it; the cyan marker shows your position, and a gold marker points to your
 current story objective when one is active.
-
-The four regions now have distinct original pixel-art palettes: bright candy
-meadows, ember-lit woods, an icy glen, and sun-baked ruins. The in-game HUD
-shows hearts and a nine-slot hotbar along the bottom of the screen.

@@ -38,10 +38,11 @@ export function createLegacyGame(canvas, onRender, titleBackgroundUrl) {
           [2, 13], [5, 13], [8, 13], [19, 13], [22, 13], [27, 13],
           [19, 15], [22, 15], [26, 15], [28, 15], [2, 18], [5, 18], [9, 18], [18, 18], [23, 18], [27, 18],
           [12, 2], [17, 2], [12, 3], [17, 3], [12, 5], [17, 5], [12, 6], [17, 6],
-          [12, 14], [17, 14], [12, 16], [17, 16], [12, 18], [17, 18], [12, 19], [17, 19]
+          [17, 14], [12, 16], [17, 16], [12, 18], [17, 18], [12, 19], [17, 19]
         ],
         gates: [
           { edge: "west", position: 10, target: "village", entrance: "east", arrival: 9, label: "Noodlewick Candy Meadows" },
+          { edge: "west", position: 14, target: "glen", entrance: "east", arrival: 9, label: "Frostglass Glen" },
           { edge: "east", position: 10, target: "ruins", entrance: "west", arrival: 9, label: "Saffron Ruins" },
           { edge: "east", position: 14, target: "village", entrance: "west", arrival: 10, label: "Noodlewick Candy Meadows" },
           { edge: "north", position: 14, target: "glen", entrance: "south", arrival: 9, label: "Frostglass Glen" }
@@ -152,23 +153,26 @@ export function createLegacyGame(canvas, onRender, titleBackgroundUrl) {
 
     function isBridgeTile(x, y) {
       if (areaId !== "village") return false;
-      return ((x === 11 || x === 12) && (y === 3 || y === 4 || y === 15 || y === 16)) ||
-        ((x === 5 || x === 6 || x === 18 || x === 19) && (y === 9 || y === 10));
+      return ((x === 11 || x === 12) && y >= 2 && y <= 4) ||
+        ((x >= 4 && x <= 7 || x >= 17 && x <= 21) && (y === 9 || y === 10));
     }
 
     function isRiverTile(x, y) {
       if (isBridgeTile(x, y)) return false;
-      const westBend = x >= 5 && x <= 6 && y >= 4 && y <= 14;
-      const northBend = y >= 3 && y <= 4 && x >= 6 && x <= 18;
-      const eastBend = x >= 18 && x <= 19 && y >= 4 && y <= 15;
-      const southBend = y >= 15 && y <= 16 && x >= 7 && x <= 18;
+      const westEdge = [4, 4, 5, 5, 4, 4, 5, 6, 5, 4, 4, 5, 6, 6, 5, 4, 4, 5][y];
+      const northEdge = [4, 4, 4, 3, 3, 2, 2, 3, 3, 2, 2, 2, 2, 3, 3, 2, 2, 3, 3, 3, 4, 4, 4, 4][x];
+      const eastEdge = [18, 18, 17, 17, 18, 19, 19, 20, 19, 18, 18, 19, 20, 20, 19, 18, 18, 19][y];
+      const southEdge = [15, 15, 15, 15, 15, 15, 14, 14, 15, 16, 15, 14, 14, 14, 15, 15, 16, 16, 15, 14, 14, 15, 15, 15][x];
+      const westBend = y >= 3 && y <= 14 && x >= westEdge && x <= westEdge + 2;
+      const northBend = x >= 4 && x <= 19 && y >= northEdge && y <= northEdge + 2;
+      const eastBend = y >= 4 && y <= 15 && x >= eastEdge && x <= eastEdge + 2;
+      const southBend = x >= 6 && x <= 20 && y >= southEdge && y <= southEdge + 2;
       return westBend || northBend || eastBend || southBend;
     }
 
     function isPondTile(x, y) {
       const lavaShoreline = [7, 8, 8, 9, 9, 10, 11, 12, 12, 11, 10, 10, 11, 12, 13, 13, 12, 11, 10, 9, 8, 8];
       if (y < 0 || y >= lavaShoreline.length) return false;
-      if (x <= 13 && ((y >= 9 && y <= 11) || (y >= 13 && y <= 15))) return false;
       return x <= lavaShoreline[y];
     }
 
@@ -246,7 +250,10 @@ export function createLegacyGame(canvas, onRender, titleBackgroundUrl) {
     function transitionAtGate() {
       const gate = area().gates.find((item) => {
         if (item.edge === "east") return player.x > (area().width - 1.2) * tile && Math.abs(player.y / tile - item.position) < 0.8;
-        if (item.edge === "west") return player.x < 1.2 * tile && Math.abs(player.y / tile - item.position) < 0.8;
+        if (item.edge === "west") {
+          const threshold = areaId === "woods" ? (item.target === "glen" ? 15 : 12) : 1.2;
+          return player.x < threshold * tile && Math.abs(player.y / tile - item.position) < 0.8;
+        }
         if (item.edge === "north") return player.y < 1.2 * tile && Math.abs(player.x / tile - item.position) < 0.8;
         return player.y > (area().height - 1.2) * tile && Math.abs(player.x / tile - item.position) < 0.8;
       });
@@ -257,7 +264,7 @@ export function createLegacyGame(canvas, onRender, titleBackgroundUrl) {
       blocked = new Set(area().obstacles.map(([x, y]) => `${x},${y}`));
       shots.length = 0;
       if (gate.entrance === "west") {
-        player.x = 1.5 * tile;
+        player.x = areaId === "woods" ? (gate.arrival === 14 ? 16 : 14) * tile : 1.5 * tile;
         player.y = gate.arrival * tile;
         player.direction = "right";
       } else if (gate.entrance === "east") {
@@ -430,13 +437,8 @@ export function createLegacyGame(canvas, onRender, titleBackgroundUrl) {
         }
         return;
       }
-      const road = areaId === "village"
-        ? y === 9 || (y === 8 && x >= 7) || x === 12
-        : areaId === "woods"
-          ? y === 10 || (x === 13 && y <= 10)
-          : areaId === "glen"
-            ? (x === 9 && y >= 7 && y <= 10) || (y === 9 && x >= 8 && x <= 11)
-            : y >= 8 && y <= 11;
+      const road = areaId === "glen" &&
+        ((x === 9 && y >= 7 && y <= 10) || (y === 9 && x >= 8 && x <= 11));
       const terrainColors = {
         meadow: ["#c9e66d", "#d7ef83", "#d6ad68"],
         volcanic: ["#512f3b", "#673744", "#55404a"],
@@ -561,33 +563,20 @@ export function createLegacyGame(canvas, onRender, titleBackgroundUrl) {
           ctx.fillRect(sx + 17, sy + 22, 5, 2);
         }
       }
-      if ((areaId === "village" && isBridgeTile(x, y)) ||
-          (areaId === "woods" && x <= 13 && ((y >= 9 && y <= 11) || (y >= 13 && y <= 15)))) {
-        if (areaId === "woods") {
-          ctx.fillStyle = "#382b38";
-          ctx.fillRect(sx, sy + 2, tile, 28);
-          ctx.fillStyle = "#72505a";
-          ctx.fillRect(sx + 2, sy + 4, tile - 4, 23);
-          ctx.fillStyle = "#a4594c";
-          for (let rock = 1; rock < 6; rock++) ctx.fillRect(sx + rock * 5, sy + 5, 2, 20);
-          ctx.fillStyle = "#f39339";
-          ctx.fillRect(sx + 3, sy + 27, 5, 2);
-          ctx.fillRect(sx + 23, sy + 5, 5, 2);
+      if (areaId === "village" && isBridgeTile(x, y)) {
+        ctx.fillStyle = "#694a36";
+        ctx.fillRect(sx, sy + 2, tile, 28);
+        ctx.fillStyle = "#a96d42";
+        ctx.fillRect(sx + 2, sy + 4, tile - 4, 23);
+        ctx.fillStyle = "#dfb16d";
+        if (x === 11 || x === 12) {
+          for (let plank = 1; plank < 6; plank++) ctx.fillRect(sx + 2, sy + plank * 4, tile - 4, 2);
         } else {
-          ctx.fillStyle = "#694a36";
-          ctx.fillRect(sx, sy + 2, tile, 28);
-          ctx.fillStyle = "#a96d42";
-          ctx.fillRect(sx + 2, sy + 4, tile - 4, 23);
-          ctx.fillStyle = "#dfb16d";
-          if (areaId === "village" && ((x >= 11 && x <= 12 && (y <= 4 || y >= 15)))) {
-            for (let plank = 1; plank < 6; plank++) ctx.fillRect(sx + 2, sy + plank * 4, tile - 4, 2);
-          } else {
-            for (let plank = 1; plank < 6; plank++) ctx.fillRect(sx + plank * 5, sy + 4, 2, 23);
-          }
-          ctx.fillStyle = "#493d34";
-          ctx.fillRect(sx, sy + 1, tile, 3);
-          ctx.fillRect(sx, sy + 28, tile, 3);
+          for (let plank = 1; plank < 6; plank++) ctx.fillRect(sx + plank * 5, sy + 4, 2, 23);
         }
+        ctx.fillStyle = "#493d34";
+        ctx.fillRect(sx, sy + 1, tile, 3);
+        ctx.fillRect(sx, sy + 28, tile, 3);
       } else if (road) {
         if (areaId === "woods") {
           ctx.fillStyle = "#89504d";
@@ -1255,7 +1244,11 @@ export function createLegacyGame(canvas, onRender, titleBackgroundUrl) {
           x = (area().width - 1) * tile - camera.x;
           y = gate.position * tile - camera.y;
         } else if (gate.edge === "west") {
-          x = camera.x === 0 ? 10 : tile - camera.x;
+          if (areaId === "woods") {
+            x = (gate.target === "glen" ? 14.5 : 11.5) * tile - camera.x;
+          } else {
+            x = camera.x === 0 ? 10 : tile - camera.x;
+          }
           y = gate.position * tile - camera.y;
         } else if (gate.edge === "north") {
           x = gate.position * tile - camera.x;

@@ -7,10 +7,10 @@ the grumble-moths across the Cinderfall Barrens, find the bell in the Saffron
 Ruins, and bring it home before the moon gets cranky. Explore the optional
 Frostglass Glen, search its suspicious chest, and collect fizzy plum tonic.
 
-The world has four original, distinct landscapes: candy meadows bordered by
-glowing lava channels; a volcanic coast with branching basalt causeways and
-ember vents; glacial shelves, snowy clearings, and crystal spires; and sunlit
-desert mesas with layered sandstone pillars.
+The world has four original, distinct landscapes: open candy meadows bordered
+by glowing lava channels; a volcanic coast with a jagged lava shoreline, ash
+ridges, and ember vents; glacial shelves, snowy clearings, and crystal spires;
+and sunlit desert mesas with layered sandstone pillars.
 
 ## Development
 

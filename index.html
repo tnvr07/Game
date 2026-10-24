@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Starfall Trail</title>
+  <title>The Sunstone Trail</title>
   <style>
     :root {
       color-scheme: dark;
@@ -74,15 +74,15 @@
 </head>
 <body>
   <main>
-    <h1>Starfall Trail</h1>
+    <h1>The Sunstone Trail</h1>
     <div class="frame">
-      <canvas id="game" width="640" height="360" aria-label="Starfall Trail game"></canvas>
+      <canvas id="game" width="640" height="360" aria-label="The Sunstone Trail action RPG"></canvas>
     </div>
     <p class="help">
       <span><kbd>WASD</kbd>/<kbd>←↑↓→</kbd> Move</span>
-      <span><kbd>Z</kbd> Pulse</span>
-      <span><kbd>E</kbd> Activate</span>
-      <span><kbd>Enter</kbd> Start / restart</span>
+      <span><kbd>Z</kbd>/<kbd>Space</kbd> Pulse attack</span>
+      <span><kbd>E</kbd> Talk / interact</span>
+      <span><kbd>Enter</kbd> Start / retry</span>
     </p>
   </main>
   <script>
@@ -91,56 +91,56 @@
     const canvas = document.querySelector("#game");
     const ctx = canvas.getContext("2d");
     const tile = 32;
-    const world = { width: 40, height: 24 };
+    const world = { width: 44, height: 22 };
     const keys = new Set();
-    const blocked = new Set();
-    const beacons = [
-      { x: 5, y: 5, active: false },
-      { x: 34, y: 5, active: false },
-      { x: 20, y: 19, active: false }
+    const obstacles = [
+      [3, 5], [4, 5], [10, 4], [11, 4], [12, 5], [16, 6], [17, 6],
+      [24, 4], [25, 4], [30, 6], [31, 6], [34, 4], [35, 4], [40, 5],
+      [5, 17], [6, 17], [12, 16], [13, 16], [19, 18], [20, 18],
+      [26, 16], [27, 16], [33, 18], [34, 18], [39, 16], [40, 16]
     ];
-    const rocks = [
-      [8, 3], [9, 3], [8, 4], [14, 7], [15, 7], [25, 4], [26, 4],
-      [30, 10], [31, 10], [10, 15], [11, 15], [27, 18], [28, 18],
-      [4, 18], [5, 18], [35, 15], [36, 15], [18, 4], [19, 4]
-    ];
-    const player = { x: 20 * tile, y: 11 * tile, direction: "down", hp: 5, pulse: 0, hurt: 0 };
-    const enemies = [
-      { x: 13 * tile, y: 5 * tile, hp: 2, phase: 0 },
-      { x: 28 * tile, y: 14 * tile, hp: 2, phase: 1.5 },
-      { x: 17 * tile, y: 20 * tile, hp: 2, phase: 3 }
-    ];
+    const blocked = new Set(obstacles.map(([x, y]) => `${x},${y}`));
+    const player = {
+      x: 5.5 * tile, y: 11 * tile, direction: "right",
+      hp: 6, attack: 0, hurt: 0
+    };
+    const guide = { x: 8.5 * tile, y: 11 * tile };
+    const relic = { x: 38 * tile, y: 11 * tile };
+    const enemies = [];
     let camera = { x: 0, y: 0 };
     let mode = "title";
-    let message = "Find the three sky beacons.";
+    let questStage = 0;
+    let message = "";
     let messageTimer = 0;
     let lastTime = 0;
-
-    for (const [x, y] of rocks) blocked.add(`${x},${y}`);
 
     window.addEventListener("keydown", (event) => {
       const key = event.key.toLowerCase();
       if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) event.preventDefault();
       keys.add(key);
-      if (key === "enter" && mode !== "playing") startGame();
-      if (mode === "playing" && key === "e" && !event.repeat) activateBeacon();
-      if (mode === "playing" && key === "z" && !event.repeat) pulse();
+      if (key === "enter" && (mode === "title" || mode === "lost" || mode === "won")) startGame();
+      if (mode === "playing" && key === "e" && !event.repeat) interact();
+      if (mode === "playing" && (key === "z" || key === " ") && !event.repeat) attack();
     });
     window.addEventListener("keyup", (event) => keys.delete(event.key.toLowerCase()));
     window.addEventListener("blur", () => keys.clear());
 
     function startGame() {
-      player.x = 20 * tile;
+      player.x = 5.5 * tile;
       player.y = 11 * tile;
-      player.hp = 5;
+      player.direction = "right";
+      player.hp = 6;
+      player.attack = 0;
       player.hurt = 0;
-      for (const beacon of beacons) beacon.active = false;
       enemies.splice(0, enemies.length,
-        { x: 13 * tile, y: 5 * tile, hp: 2, phase: 0 },
-        { x: 28 * tile, y: 14 * tile, hp: 2, phase: 1.5 },
-        { x: 17 * tile, y: 20 * tile, hp: 2, phase: 3 });
-      message = "Find the three sky beacons.";
+        { x: 16 * tile, y: 11 * tile, hp: 2, alive: true },
+        { x: 23 * tile, y: 10.5 * tile, hp: 2, alive: true },
+        { x: 30 * tile, y: 11.5 * tile, hp: 2, alive: true });
+      questStage = 0;
+      message = "Find Elder Rowan by the village road.";
+      messageTimer = 4;
       mode = "playing";
+      updateCamera();
     }
 
     function isBlocked(x, y) {
@@ -149,59 +149,81 @@
       return tx < 0 || ty < 0 || tx >= world.width || ty >= world.height || blocked.has(`${tx},${ty}`);
     }
 
-    function movePlayer(dx, dy) {
-      const radius = 9;
-      const nx = player.x + dx;
-      const ny = player.y + dy;
-      if (!isBlocked(nx - radius, player.y) && !isBlocked(nx + radius, player.y)) player.x = nx;
-      if (!isBlocked(player.x, ny - radius) && !isBlocked(player.x, ny + radius)) player.y = ny;
+    function moveEntity(entity, dx, dy, radius) {
+      const nx = entity.x + dx;
+      const ny = entity.y + dy;
+      if (!isBlocked(nx - radius, entity.y) && !isBlocked(nx + radius, entity.y)) entity.x = nx;
+      if (!isBlocked(entity.x, ny - radius) && !isBlocked(entity.x, ny + radius)) entity.y = ny;
     }
 
-    function activateBeacon() {
-      const beacon = beacons.find((item) => !item.active &&
-        Math.hypot(item.x * tile + 16 - player.x, item.y * tile + 16 - player.y) < 48);
-      if (!beacon) {
-        setMessage("Get closer to a sky beacon.");
-        return;
-      }
-      beacon.active = true;
-      const count = beacons.filter((item) => item.active).length;
-      if (count === beacons.length) {
+    function near(a, b, distance) {
+      return Math.hypot(a.x - b.x, a.y - b.y) < distance;
+    }
+
+    function interact() {
+      if (questStage === 0 && near(player, guide, 58)) {
+        questStage = 1;
+        showMessage("Elder Rowan: Dusklings took our Sunstone! Drive them off, then bring it back.");
+      } else if (questStage === 1 && near(player, relic, 58)) {
+        if (enemies.length > 0) {
+          showMessage("The dusklings are still guarding the Sunstone.");
+        } else {
+          questStage = 2;
+          showMessage("You found the Sunstone. Return it to Elder Rowan.");
+        }
+      } else if (questStage === 2 && near(player, guide, 58)) {
         mode = "won";
-        message = "The trail shines again!";
+        message = "Elder Rowan: The village will see another sunrise. Thank you!";
+      } else if (near(player, guide, 58)) {
+        showMessage(questStage === 2 ? "Elder Rowan is waiting for the Sunstone." : "Elder Rowan: Follow the road east.");
+      } else if (near(player, relic, 58) && questStage < 1) {
+        showMessage("A golden light rests on the far end of the road.");
       } else {
-        setMessage(`Beacon lit. ${beacons.length - count} remain.`);
+        showMessage("There is nothing to interact with here.");
       }
     }
 
-    function pulse() {
-      player.pulse = 0.22;
+    function attack() {
+      if (player.attack > 0) return;
+      player.attack = 0.32;
       let hit = false;
       for (let index = enemies.length - 1; index >= 0; index--) {
         const enemy = enemies[index];
         const dx = enemy.x - player.x;
         const dy = enemy.y - player.y;
-        const facing = player.direction === "left" ? dx < 8 && dx > -58 && Math.abs(dy) < 26
-          : player.direction === "right" ? dx > -8 && dx < 58 && Math.abs(dy) < 26
-          : player.direction === "up" ? dy < 8 && dy > -58 && Math.abs(dx) < 26
-          : dy > -8 && dy < 58 && Math.abs(dx) < 26;
-        if (facing) {
-          enemy.hp--;
-          hit = true;
-          if (enemy.hp <= 0) enemies.splice(index, 1);
-          else {
-            const length = Math.max(1, Math.hypot(dx, dy));
-            enemy.x += (dx / length) * 18;
-            enemy.y += (dy / length) * 18;
-          }
+        const facing = player.direction === "left" ? dx < 8 && dx > -62 && Math.abs(dy) < 25
+          : player.direction === "right" ? dx > -8 && dx < 62 && Math.abs(dy) < 25
+          : player.direction === "up" ? dy < 8 && dy > -62 && Math.abs(dx) < 25
+          : dy > -8 && dy < 62 && Math.abs(dx) < 25;
+        if (!facing) continue;
+        enemy.hp--;
+        hit = true;
+        if (enemy.hp <= 0) {
+          enemies.splice(index, 1);
+          player.hp = Math.min(6, player.hp + 1);
+          showMessage("Duskling scattered. You recover a little strength.");
         }
       }
-      if (!hit) setMessage("Your pulse passes through the quiet air.");
+      if (!hit) showMessage("Your pulse fades into the air.");
     }
 
-    function setMessage(text) {
+    function showMessage(text) {
       message = text;
-      messageTimer = 2.2;
+      messageTimer = 3.2;
+    }
+
+    function questText() {
+      if (questStage === 0) return "QUEST  Find Elder Rowan";
+      if (questStage === 1) return enemies.length
+        ? `QUEST  Drive off the dusklings (${3 - enemies.length}/3)`
+        : "QUEST  Take the Sunstone at the end of the road";
+      if (questStage === 2) return "QUEST  Return the Sunstone to Elder Rowan";
+      return "QUEST  Complete";
+    }
+
+    function updateCamera() {
+      camera.x = Math.max(0, Math.min(world.width * tile - canvas.width, player.x - canvas.width / 2));
+      camera.y = Math.max(0, Math.min(world.height * tile - canvas.height, player.y - canvas.height / 2));
     }
 
     function update(dt) {
@@ -214,70 +236,67 @@
       if (keys.has("arrowdown") || keys.has("s")) dy++;
       if (dx || dy) {
         const length = Math.hypot(dx, dy);
-        dx = dx / length * 120 * dt;
-        dy = dy / length * 120 * dt;
-        if (Math.abs(dx) > Math.abs(dy)) player.direction = dx < 0 ? "left" : "right";
-        else player.direction = dy < 0 ? "up" : "down";
-        movePlayer(dx, dy);
+        dx = dx / length * 118 * dt;
+        dy = dy / length * 118 * dt;
+        player.direction = Math.abs(dx) > Math.abs(dy)
+          ? (dx < 0 ? "left" : "right")
+          : (dy < 0 ? "up" : "down");
+        moveEntity(player, dx, dy, 9);
       }
 
-      player.pulse = Math.max(0, player.pulse - dt);
+      player.attack = Math.max(0, player.attack - dt);
       player.hurt = Math.max(0, player.hurt - dt);
       messageTimer = Math.max(0, messageTimer - dt);
 
       for (const enemy of enemies) {
-        enemy.phase += dt;
         const distance = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-        if (distance < 155 && distance > 25) {
-          const speed = distance < 45 ? 0 : 35;
-          const ex = (player.x - enemy.x) / distance * speed * dt;
-          const ey = (player.y - enemy.y) / distance * speed * dt;
-          if (!isBlocked(enemy.x + ex, enemy.y)) enemy.x += ex;
-          if (!isBlocked(enemy.x, enemy.y + ey)) enemy.y += ey;
+        if (distance < 190 && distance > 25) {
+          const speed = 34;
+          moveEntity(enemy, (player.x - enemy.x) / distance * speed * dt,
+            (player.y - enemy.y) / distance * speed * dt, 9);
         } else if (distance < 25 && player.hurt === 0) {
           player.hp--;
-          player.hurt = 0.8;
+          player.hurt = 0.85;
           if (player.hp <= 0) {
             mode = "lost";
-            message = "The trail can be tried again.";
+            message = "The dusklings drove you back.";
           } else {
-            setMessage("A duskling bumps you back!");
+            showMessage("A duskling struck you. Keep your distance!");
           }
         }
       }
-
-      camera.x = Math.max(0, Math.min(world.width * tile - canvas.width, player.x - canvas.width / 2));
-      camera.y = Math.max(0, Math.min(world.height * tile - canvas.height, player.y - canvas.height / 2));
+      updateCamera();
     }
 
     function drawTile(x, y) {
-      const screenX = x * tile - camera.x;
-      const screenY = y * tile - camera.y;
-      const path = (x > 17 && x < 22) || (y > 9 && y < 13) ||
-        (Math.abs(x - 5) + Math.abs(y - 5) < 7) ||
-        (Math.abs(x - 34) + Math.abs(y - 5) < 7) ||
-        (Math.abs(x - 20) + Math.abs(y - 19) < 7);
-      ctx.fillStyle = path ? "#8b7957" : ((x * 7 + y * 13) % 5 === 0 ? "#38644c" : "#315b49");
-      ctx.fillRect(screenX, screenY, tile, tile);
-      if (!path && (x * 3 + y * 5) % 7 === 0) {
+      const sx = x * tile - camera.x;
+      const sy = y * tile - camera.y;
+      const road = y >= 9 && y <= 13 && x >= 3 && x <= 40;
+      const village = x < 11;
+      ctx.fillStyle = road ? (village ? "#9a865e" : "#8a7958")
+        : ((x * 7 + y * 13) % 5 === 0 ? "#38644c" : "#315b49");
+      ctx.fillRect(sx, sy, tile, tile);
+      if (road) {
+        ctx.fillStyle = "#aa9568";
+        if ((x + y) % 4 === 0) ctx.fillRect(sx + 8, sy + 13, 3, 2);
+      } else if ((x * 3 + y * 5) % 7 === 0) {
         ctx.fillStyle = "#6b9a5d";
-        ctx.fillRect(screenX + 7, screenY + 8, 3, 3);
-        ctx.fillRect(screenX + 22, screenY + 23, 2, 3);
+        ctx.fillRect(sx + 7, sy + 8, 3, 3);
+        ctx.fillRect(sx + 22, sy + 23, 2, 3);
       }
     }
 
-    function drawBeacon(beacon) {
-      const x = beacon.x * tile - camera.x + 16;
-      const y = beacon.y * tile - camera.y + 16;
-      ctx.fillStyle = "#263c39";
-      ctx.fillRect(x - 9, y + 8, 18, 7);
-      ctx.fillStyle = beacon.active ? "#ffe99a" : "#819c88";
-      ctx.fillRect(x - 5, y - 8, 10, 17);
-      ctx.fillStyle = beacon.active ? "#fff7cf" : "#a9c8ad";
-      ctx.fillRect(x - 2, y - 15, 4, 8);
-      ctx.fillStyle = beacon.active ? "#f4ca62" : "#718c78";
-      ctx.fillRect(x - 11, y - 12, 5, 4);
-      ctx.fillRect(x + 6, y - 12, 5, 4);
+    function drawObstacle(x, y) {
+      const sx = x * tile - camera.x;
+      const sy = y * tile - camera.y;
+      ctx.fillStyle = "#263c35";
+      ctx.fillRect(sx + 2, sy + 12, 28, 18);
+      ctx.fillStyle = "#4e7652";
+      ctx.fillRect(sx + 4, sy + 7, 24, 18);
+      ctx.fillStyle = "#67905a";
+      ctx.fillRect(sx + 9, sy + 3, 14, 15);
+      ctx.fillStyle = "#87a461";
+      ctx.fillRect(sx + 13, sy + 2, 6, 5);
     }
 
     function drawCharacter(x, y, color, facing, isPlayer) {
@@ -287,7 +306,7 @@
       ctx.fillRect(sx - 8, sy + 5, 16, 10);
       ctx.fillStyle = color;
       ctx.fillRect(sx - 7, sy - 8, 14, 14);
-      ctx.fillStyle = isPlayer ? "#f2d1a2" : "#c6d4a0";
+      ctx.fillStyle = isPlayer ? "#f2d1a2" : "#d2bd91";
       ctx.fillRect(sx - 5, sy - 15, 10, 9);
       ctx.fillStyle = "#273431";
       const eyeX = facing === "left" ? -4 : facing === "right" ? 2 : -3;
@@ -295,11 +314,11 @@
       if (isPlayer) {
         ctx.fillStyle = "#e4b852";
         ctx.fillRect(sx - 9, sy - 4, 18, 4);
-        if (player.pulse > 0) {
+        if (player.attack > 0.18) {
           ctx.strokeStyle = "#fff0aa";
           ctx.lineWidth = 3;
           ctx.beginPath();
-          ctx.ellipse(sx, sy, 28, 19, 0, 0, Math.PI * 2);
+          ctx.ellipse(sx, sy, 27, 18, 0, 0, Math.PI * 2);
           ctx.stroke();
         }
       } else {
@@ -307,6 +326,35 @@
         ctx.fillRect(sx - 5, sy - 12, 2, 2);
         ctx.fillRect(sx + 3, sy - 12, 2, 2);
       }
+    }
+
+    function drawGuide() {
+      const x = guide.x - camera.x;
+      const y = guide.y - camera.y;
+      ctx.fillStyle = "#26352f";
+      ctx.fillRect(x - 9, y + 5, 18, 10);
+      ctx.fillStyle = "#4f7773";
+      ctx.fillRect(x - 8, y - 8, 16, 16);
+      ctx.fillStyle = "#e2bd8b";
+      ctx.fillRect(x - 6, y - 16, 12, 10);
+      ctx.fillStyle = "#26352f";
+      ctx.fillRect(x - 3, y - 13, 2, 2);
+      ctx.fillRect(x + 2, y - 13, 2, 2);
+      ctx.fillStyle = "#c5c1a0";
+      ctx.fillRect(x - 8, y - 7, 16, 3);
+    }
+
+    function drawRelic() {
+      const x = relic.x - camera.x;
+      const y = relic.y - camera.y;
+      ctx.fillStyle = "#493e2d";
+      ctx.fillRect(x - 11, y + 8, 22, 7);
+      ctx.fillStyle = "#c89a3c";
+      ctx.fillRect(x - 8, y - 4, 16, 14);
+      ctx.fillStyle = "#ffe89a";
+      ctx.fillRect(x - 4, y - 12, 8, 17);
+      ctx.fillStyle = "#fff6c7";
+      ctx.fillRect(x - 2, y - 18, 4, 7);
     }
 
     function drawPanel(x, y, width, height) {
@@ -317,26 +365,48 @@
       ctx.strokeRect(x + 1, y + 1, width - 2, height - 2);
     }
 
+    function wrapMessage(text, maxCharacters) {
+      const lines = [];
+      let line = "";
+      for (const word of text.split(/\s+/)) {
+        const next = line ? `${line} ${word}` : word;
+        if (next.length > maxCharacters && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = next;
+        }
+      }
+      if (line) lines.push(line);
+      return lines.slice(0, 2);
+    }
+
+    function drawTitle() {
+      ctx.fillStyle = "#315b49";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < 10; i++) {
+        ctx.fillStyle = i % 2 ? "#38644c" : "#416c50";
+        ctx.fillRect(i * 72 - 10, 226 + (i % 3) * 12, 76, 140);
+      }
+      ctx.fillStyle = "#f4d477";
+      ctx.textAlign = "center";
+      ctx.font = "bold 34px monospace";
+      ctx.fillText("THE SUNSTONE TRAIL", 320, 100);
+      ctx.fillStyle = "#f4edcc";
+      ctx.font = "15px monospace";
+      ctx.fillText("A village. A stolen relic. One road through the wilds.", 320, 137);
+      camera = { x: 0, y: 0 };
+      drawCharacter(320, 218, "#557fa0", "right", true);
+      drawCharacter(360, 218, "#4f7773", "left", false);
+      ctx.fillStyle = "#f4edcc";
+      ctx.fillText("Press Enter to begin", 320, 304);
+      ctx.textAlign = "left";
+    }
+
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       if (mode === "title") {
-        ctx.fillStyle = "#315b49";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        for (let i = 0; i < 8; i++) {
-          ctx.fillStyle = i % 2 ? "#38644c" : "#416c50";
-          ctx.fillRect(i * 96 - 20, 210 + (i % 3) * 14, 100, 150);
-        }
-        ctx.fillStyle = "#f4d477";
-        ctx.font = "bold 36px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText("STARFALL TRAIL", 320, 112);
-        ctx.fillStyle = "#f4edcc";
-        ctx.font = "16px monospace";
-        ctx.fillText("A little journey to relight the old paths", 320, 148);
-        drawCharacter(320, 220, "#557fa0", "down", true);
-        ctx.fillStyle = "#f4edcc";
-        ctx.fillText("PRESS ENTER TO BEGIN", 320, 300);
-        ctx.textAlign = "left";
+        drawTitle();
         return;
       }
 
@@ -345,66 +415,53 @@
       for (let y = startY; y <= startY + 12; y++) {
         for (let x = startX; x <= startX + 21; x++) drawTile(x, y);
       }
-      for (const [x, y] of rocks) {
-        const sx = x * tile - camera.x;
-        const sy = y * tile - camera.y;
-        ctx.fillStyle = "#344640";
-        ctx.fillRect(sx + 2, sy + 11, 28, 19);
-        ctx.fillStyle = "#68796a";
-        ctx.fillRect(sx + 6, sy + 7, 20, 18);
-        ctx.fillStyle = "#85917a";
-        ctx.fillRect(sx + 11, sy + 5, 8, 4);
-      }
-      for (const beacon of beacons) drawBeacon(beacon);
-
-      const guideX = 22 * tile - camera.x + 16;
-      const guideY = 11 * tile - camera.y + 16;
-      ctx.fillStyle = "#3f6f7a";
-      ctx.fillRect(guideX - 8, guideY - 8, 16, 22);
-      ctx.fillStyle = "#e2bd8b";
-      ctx.fillRect(guideX - 6, guideY - 15, 12, 10);
-      ctx.fillStyle = "#202e30";
-      ctx.fillRect(guideX - 3, guideY - 12, 2, 2);
-      ctx.fillRect(guideX + 2, guideY - 12, 2, 2);
-
+      for (const [x, y] of obstacles) drawObstacle(x, y);
+      drawGuide();
+      drawRelic();
       for (const enemy of enemies) drawCharacter(enemy.x, enemy.y, "#695c78", "down", false);
+
       if (player.hurt > 0 && Math.floor(player.hurt * 12) % 2 === 0) {
-        // Briefly blink after taking a hit.
+        // Blink briefly after taking a hit.
       } else {
         drawCharacter(player.x, player.y, "#557fa0", player.direction, true);
       }
 
-      drawPanel(8, 8, 210, 40);
+      drawPanel(8, 8, 210, 42);
       ctx.fillStyle = "#f4edcc";
-      ctx.font = "14px monospace";
-      ctx.fillText("TRAILKEEPER", 18, 25);
+      ctx.font = "13px monospace";
+      ctx.fillText("TRAIL RUNNER", 18, 24);
       ctx.fillStyle = "#d87366";
-      ctx.fillText("♥".repeat(player.hp) + "·".repeat(5 - player.hp), 18, 41);
-      const lit = beacons.filter((beacon) => beacon.active).length;
+      ctx.fillText("♥".repeat(player.hp) + "·".repeat(6 - player.hp), 18, 42);
+
+      drawPanel(226, 8, 406, 60);
       ctx.fillStyle = "#f2ca70";
-      ctx.fillText(`BEACONS ${lit}/3`, 111, 41);
-
-      drawPanel(226, 8, 406, 40);
-      ctx.fillStyle = "#f4edcc";
       ctx.font = "12px monospace";
-      ctx.fillText(messageTimer > 0 || mode !== "playing" ? message : "The guide: Three beacons keep the old road bright.", 238, 32);
+      ctx.fillText(questText(), 238, 25);
+      ctx.fillStyle = "#f4edcc";
+      ctx.font = "10px monospace";
+      const lines = wrapMessage(messageTimer > 0 ? message : "Follow the road east.", 56);
+      ctx.fillText(lines[0] || "", 238, 42);
+      if (lines[1]) ctx.fillText(lines[1], 238, 55);
 
-      const nearbyBeacon = beacons.some((beacon) => !beacon.active &&
-        Math.hypot(beacon.x * tile + 16 - player.x, beacon.y * tile + 16 - player.y) < 58);
-      if (nearbyBeacon && mode === "playing") {
-        drawPanel(218, 310, 204, 34);
+      const nearGuide = near(player, guide, 62);
+      const nearRelic = near(player, relic, 62);
+      if ((nearGuide && (questStage === 0 || questStage === 2)) ||
+          (nearRelic && questStage === 1 && enemies.length === 0) ||
+          (nearRelic && questStage === 1 && enemies.length > 0)) {
+        drawPanel(222, 310, 196, 34);
         ctx.fillStyle = "#fff0aa";
-        ctx.fillText("E  LIGHT BEACON", 253, 332);
+        ctx.font = "13px monospace";
+        ctx.fillText("E  TALK / INTERACT", 246, 332);
       }
 
       if (mode === "won" || mode === "lost") {
-        ctx.fillStyle = "#101820b8";
+        ctx.fillStyle = "#101820bb";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        drawPanel(112, 122, 416, 116);
+        drawPanel(104, 122, 432, 116);
         ctx.fillStyle = mode === "won" ? "#f2ca70" : "#e3a28b";
         ctx.textAlign = "center";
-        ctx.font = "bold 24px monospace";
-        ctx.fillText(mode === "won" ? "TRAIL RESTORED!" : "THE TRAIL GROWS QUIET", 320, 165);
+        ctx.font = "bold 22px monospace";
+        ctx.fillText(mode === "won" ? "SUNSTONE RETURNED!" : "THE TRAIL GROWS QUIET", 320, 165);
         ctx.fillStyle = "#f4edcc";
         ctx.font = "15px monospace";
         ctx.fillText("Press Enter to play again", 320, 202);

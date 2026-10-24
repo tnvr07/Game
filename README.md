@@ -3,9 +3,14 @@
 A whimsical, original top-down pixel-art adventure. The moon has misplaced its
 bedtime bell, and Noodlewick's residents are having a very long day. Set out
 with Pip, your floating lantern-sprite companion. Talk to Auntie Fizz, chase
-the grumble-moths through the Upside-Down Woods, find the bell in the Teacup
-Catacombs, and bring it home before the moon gets cranky. Explore the optional
-Hush-Hush Glen, search its suspicious chest, and collect fizzy plum tonic.
+the grumble-moths across the Cinderfall Barrens, find the bell in the Saffron
+Ruins, and bring it home before the moon gets cranky. Explore the optional
+Frostglass Glen, search its suspicious chest, and collect fizzy plum tonic.
+
+The world has four original, distinct landscapes: candy meadows bordered by
+glowing lava channels; a volcanic coast with branching basalt causeways and
+ember vents; glacial shelves, snowy clearings, and crystal spires; and sunlit
+desert mesas with layered sandstone pillars.
 
 ## Development
 

@@ -1,4 +1,4 @@
-export function createLegacyGame(canvas, onRender) {
+export function createLegacyGame(canvas, onRender, titleBackgroundUrl) {
 
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Could not create the game render context.");
@@ -8,29 +8,29 @@ export function createLegacyGame(canvas, onRender) {
       onRender();
     };
     titleBackground.onerror = () => console.error("Could not load title-background.png.");
-    titleBackground.src = "title-background.png";
+    titleBackground.src = titleBackgroundUrl;
     const tile = 32;
     const areas = {
       village: {
-        name: "Noodlewick",
+        name: "Noodlewick Candy Meadows",
         width: 24,
         height: 18,
-        terrain: "village",
+        terrain: "meadow",
         obstacles: [[1, 2], [3, 3], [20, 2], [21, 3], [2, 15], [4, 16], [19, 15], [21, 16],
           [8, 5], [9, 5], [8, 6], [15, 5], [16, 5], [15, 6],
           [7, 13], [8, 13], [10, 13], [11, 13], [7, 14], [8, 14], [10, 14], [11, 14],
           [16, 12], [17, 12], [16, 13]],
         gates: [
-          { edge: "east", position: 9, target: "woods", entrance: "west", arrival: 10, label: "The Upside-Down Woods" },
-          { edge: "west", position: 10, target: "woods", entrance: "east", arrival: 14, label: "The Upside-Down Woods" },
-          { edge: "north", position: 12, target: "glen", entrance: "south", arrival: 9, label: "The Hush-Hush Glen" }
+          { edge: "east", position: 9, target: "woods", entrance: "west", arrival: 10, label: "Cinderfall Barrens" },
+          { edge: "west", position: 10, target: "woods", entrance: "east", arrival: 14, label: "Cinderfall Barrens" },
+          { edge: "north", position: 12, target: "glen", entrance: "south", arrival: 9, label: "Frostglass Glen" }
         ]
       },
       woods: {
-        name: "The Upside-Down Woods",
+        name: "Cinderfall Barrens",
         width: 30,
         height: 22,
-        terrain: "woods",
+        terrain: "volcanic",
         obstacles: [
           [1, 1], [3, 1], [5, 1], [8, 1], [10, 1], [18, 1], [21, 1], [24, 1], [27, 1],
           [0, 3], [2, 3], [5, 3], [8, 3], [19, 3], [22, 3], [26, 3], [28, 3],
@@ -41,34 +41,34 @@ export function createLegacyGame(canvas, onRender) {
           [12, 14], [17, 14], [12, 16], [17, 16], [12, 18], [17, 18], [12, 19], [17, 19]
         ],
         gates: [
-          { edge: "west", position: 10, target: "village", entrance: "east", arrival: 9, label: "Noodlewick" },
-          { edge: "east", position: 10, target: "ruins", entrance: "west", arrival: 9, label: "The Teacup Catacombs" },
-          { edge: "east", position: 14, target: "village", entrance: "west", arrival: 10, label: "Noodlewick" },
-          { edge: "north", position: 14, target: "glen", entrance: "south", arrival: 9, label: "The Hush-Hush Glen" }
+          { edge: "west", position: 10, target: "village", entrance: "east", arrival: 9, label: "Noodlewick Candy Meadows" },
+          { edge: "east", position: 10, target: "ruins", entrance: "west", arrival: 9, label: "Saffron Ruins" },
+          { edge: "east", position: 14, target: "village", entrance: "west", arrival: 10, label: "Noodlewick Candy Meadows" },
+          { edge: "north", position: 14, target: "glen", entrance: "south", arrival: 9, label: "Frostglass Glen" }
         ]
       },
       glen: {
-        name: "The Hush-Hush Glen",
+        name: "Frostglass Glen",
         width: 20,
         height: 18,
-        terrain: "glen",
+        terrain: "ice",
         obstacles: [[1, 2], [4, 2], [7, 1], [12, 2], [16, 2], [2, 5], [6, 5], [12, 5], [17, 5],
           [2, 13], [5, 15], [8, 15], [13, 14], [17, 13]],
         gates: [
-          { edge: "south", position: 9, target: "village", entrance: "north", arrival: 12, label: "Noodlewick" },
-          { edge: "east", position: 9, target: "woods", entrance: "west", arrival: 14, label: "The Upside-Down Woods" }
+          { edge: "south", position: 9, target: "village", entrance: "north", arrival: 12, label: "Noodlewick Candy Meadows" },
+          { edge: "east", position: 9, target: "woods", entrance: "west", arrival: 14, label: "Cinderfall Barrens" }
         ]
       },
       ruins: {
-        name: "The Teacup Catacombs",
+        name: "Saffron Ruins",
         width: 24,
         height: 18,
-        terrain: "ruins",
+        terrain: "desert",
         obstacles: [[11, 1], [12, 1], [14, 1], [16, 1], [18, 1], [9, 3], [10, 3], [13, 3], [16, 3], [19, 3],
           [6, 4], [7, 4], [11, 5], [14, 5], [17, 6], [19, 7], [4, 8], [7, 8], [14, 8], [19, 9],
           [5, 12], [9, 12], [13, 13], [16, 14], [20, 14]],
         gates: [
-          { edge: "west", position: 9, target: "woods", entrance: "east", arrival: 10, label: "The Upside-Down Woods" }
+          { edge: "west", position: 9, target: "woods", entrance: "east", arrival: 10, label: "Cinderfall Barrens" }
         ]
       }
     };
@@ -131,7 +131,7 @@ export function createLegacyGame(canvas, onRender) {
         { area: "woods", x: 21 * tile, y: 8.5 * tile, hp: 2 },
         { area: "woods", x: 25 * tile, y: 12 * tile, hp: 2 });
       questStage = 0;
-      message = "Auntie Fizz is waiting by the crooked fountain.";
+      message = "Auntie Fizz is waiting by the meadow trail.";
       messageTimer = 4;
       mode = "playing";
       mapExpanded = false;
@@ -145,7 +145,7 @@ export function createLegacyGame(canvas, onRender) {
       if (tx < 0 || ty < 0 || tx >= area().width || ty >= area().height || blocked.has(`${tx},${ty}`)) return true;
       if (areaId === "village" && isRiverTile(tx, ty)) return true;
       if (areaId === "woods" && isPondTile(tx, ty)) return true;
-      if (areaId === "glen" && tx >= 3 && tx <= 7 && ty >= 8 && ty <= 12) return true;
+      if (areaId === "glen" && isGlacierSheet(tx, ty)) return true;
       if (areaId === "ruins" && isMountainTile(tx, ty)) return true;
       return false;
     }
@@ -166,16 +166,29 @@ export function createLegacyGame(canvas, onRender) {
     }
 
     function isPondTile(x, y) {
-      if (x <= 10 && y >= 9 && y <= 11) return false;
-      const dx = (x - 5) / 4.3;
-      const dy = (y - 10) / 3.2;
-      return dx * dx + dy * dy < 1;
+      const lavaShoreline = [7, 8, 8, 9, 9, 10, 11, 12, 12, 11, 10, 10, 11, 12, 13, 13, 12, 11, 10, 9, 8, 8];
+      if (y < 0 || y >= lavaShoreline.length) return false;
+      if (x <= 13 && ((y >= 9 && y <= 11) || (y >= 13 && y <= 15))) return false;
+      return x <= lavaShoreline[y];
     }
 
     function isMountainTile(x, y) {
-      return (x > 14 && y < 7 && x + y > 19) ||
-        (x > 16 && y > 5 && x - y > 11) ||
-        (x > 18 && y > 10 && x - y > 8);
+      const northwestShelf = x >= 0 && x <= 3 && y <= 3;
+      const southwestShelf = x <= 4 && y >= 14;
+      const upperShelf = x >= 7 && x <= 10 && y >= 1 && y <= 3;
+      const northeastShelf = x >= 20 && y >= 5 && y <= 7;
+      const southeastShelf = x >= 20 && y >= 12 && y <= 15;
+      return northwestShelf || southwestShelf || upperShelf || northeastShelf || southeastShelf;
+    }
+
+    function isGlacierSheet(x, y) {
+      const westernShelf = x >= 1 && x <= 8 && y >= 2 && y <= 13 &&
+        !(x >= 5 && x <= 8 && y >= 7 && y <= 9);
+      const northeasternShelf = x >= 13 && x <= 19 && y >= 0 && y <= 9 &&
+        !(x <= 15 && y >= 5 && y <= 8) && !(x >= 17 && y >= 8);
+      const southeasternShelf = x >= 12 && x <= 18 && y >= 12 && y <= 16 &&
+        !(x <= 12 && y >= 15);
+      return westernShelf || northeasternShelf || southeasternShelf;
     }
 
     function moveEntity(entity, dx, dy, radius) {
@@ -208,9 +221,9 @@ export function createLegacyGame(canvas, onRender) {
         mode = "won";
         message = "Auntie Fizz: Ding! The moon yawned. You saved bedtime, brave little weird-o!";
       } else if (areaId === "village" && near(player, guide, 58)) {
-        showMessage(questStage === 2 ? "Auntie Fizz is waiting for the Moonbell." : "Auntie Fizz: Go east. If a tree is upside-down, wave politely.");
+        showMessage(questStage === 2 ? "Auntie Fizz is waiting for the Moonbell." : "Auntie Fizz: Follow the ember road east, and mind the hot springs.");
       } else if (areaId === "ruins" && near(player, relic, 58) && questStage < 1) {
-        showMessage("A little bell is asleep beneath a very suspicious teacup.");
+        showMessage("A little bell is buried beneath the old sandstone arch.");
       } else if (areaId === "glen" && near(player, secretChest, 54)) {
         showMessage("The old chest is empty. It looks mildly embarrassed.");
       } else {
@@ -376,92 +389,224 @@ export function createLegacyGame(canvas, onRender) {
       const sy = y * tile - camera.y;
       const water = areaId === "village" ? isRiverTile(x, y)
         : areaId === "woods" ? isPondTile(x, y)
-        : areaId === "glen" ? x >= 3 && x <= 7 && y >= 8 && y <= 12
+        : areaId === "glen" ? isGlacierSheet(x, y)
         : false;
       if (water) {
-        ctx.fillStyle = areaId === "ruins" ? "#65777a" : "#397fa2";
-        ctx.fillRect(sx, sy, tile, tile);
-        ctx.fillStyle = "#70b0c1";
-        if ((x * 3 + y * 7) % 3 === 0) {
-          ctx.fillRect(sx + 5 + (x % 4) * 3, sy + 8, 8, 2);
-          ctx.fillRect(sx + 17, sy + 23 - (y % 3) * 2, 7, 2);
+        const waterColor = areaId === "village" || areaId === "woods" ? "#ed4c27" : "#a9e7f2";
+        const shoreColor = areaId === "village" ? "#8d382f" : areaId === "woods" ? "#682e32" : "#728cbd";
+        if (areaId === "village" || areaId === "woods") {
+          ctx.fillStyle = waterColor;
+          ctx.fillRect(sx, sy, tile, tile);
+          ctx.fillStyle = shoreColor;
+          const lavaAt = areaId === "village" ? isRiverTile : isPondTile;
+          if (!lavaAt(x - 1, y)) ctx.fillRect(sx, sy, 2, tile);
+          if (!lavaAt(x + 1, y)) ctx.fillRect(sx + tile - 2, sy, 2, tile);
+          if (!lavaAt(x, y - 1)) ctx.fillRect(sx, sy, tile, 2);
+          if (!lavaAt(x, y + 1)) ctx.fillRect(sx, sy + tile - 2, tile, 2);
+        } else {
+          ctx.fillStyle = shoreColor;
+          ctx.fillRect(sx, sy, tile, tile);
+          ctx.fillStyle = waterColor;
+          ctx.fillRect(sx + 2, sy + 2, tile - 4, tile - 4);
         }
-        ctx.fillStyle = "#b5d5bf";
-        if ((x + y) % 5 === 0) ctx.fillRect(sx + 11, sy + 15, 3, 2);
+        if (areaId === "village" || areaId === "woods") {
+          ctx.fillStyle = "#ff9a35";
+          if ((x * 3 + y * 7) % 3 === 0) {
+            ctx.fillRect(sx + 5 + (x % 4) * 3, sy + 8, 9, 2);
+            ctx.fillRect(sx + 17, sy + 23 - (y % 3) * 2, 7, 2);
+          }
+          ctx.fillStyle = "#ffd17b";
+          if ((x + y) % 5 === 0) ctx.fillRect(sx + 11, sy + 15, 3, 2);
+        } else {
+          ctx.fillStyle = "#d7f8ff";
+          if ((x + y) % 2 === 0) {
+            ctx.fillRect(sx + 5, sy + 7, 9, 1);
+            ctx.fillRect(sx + 5, sy + 7, 1, 6);
+            ctx.fillRect(sx + 17, sy + 21, 8, 1);
+            ctx.fillRect(sx + 24, sy + 17, 1, 5);
+          }
+          ctx.fillStyle = "#81cbe0";
+          if ((x * 5 + y) % 4 === 0) ctx.fillRect(sx + 12, sy + 15, 3, 2);
+        }
         return;
       }
       const road = areaId === "village"
-        ? ((y >= 9 && y <= 10) || (y === 8 && x >= 7)) ||
-          (x >= 11 && x <= 12)
+        ? y === 9 || (y === 8 && x >= 7) || x === 12
         : areaId === "woods"
-          ? (y >= 9 && y <= 11) || (x >= 10 && x <= 14 && y <= 10)
+          ? y === 10 || (x === 13 && y <= 10)
           : areaId === "glen"
-            ? (x >= 8 && x <= 11) || (y >= 7 && y <= 10 && x >= 8 && x <= 11)
+            ? (x === 9 && y >= 7 && y <= 10) || (y === 9 && x >= 8 && x <= 11)
             : y >= 8 && y <= 11;
       const terrainColors = {
-        village: ["#38644c", "#416c50", "#9a865e"],
-        woods: ["#294e3e", "#315942", "#877552"],
-        glen: ["#366457", "#3d7060", "#8f8960"],
-        ruins: ["#545c50", "#626b59", "#81775c"]
+        meadow: ["#c9e66d", "#d7ef83", "#d6ad68"],
+        volcanic: ["#512f3b", "#673744", "#55404a"],
+        ice: ["#d8e2f6", "#eaf3ff", "#b9c7e6"],
+        desert: ["#dfa85f", "#edbd75", "#c98d50"]
       };
       const palette = terrainColors[area().terrain];
-      ctx.fillStyle = road ? palette[2] : ((x * 7 + y * 13) % 5 === 0 ? palette[1] : palette[0]);
+      const seed = (x * 17 + y * 29) % 11;
+      ctx.fillStyle = road ? palette[2] : palette[0];
       ctx.fillRect(sx, sy, tile, tile);
+      if (!road && seed === 8) {
+        ctx.fillStyle = palette[1];
+        ctx.fillRect(sx + 4 + seed % 7, sy + 5 + seed % 9, 7, 4);
+      }
+      if (areaId === "glen" && isGlacierSheet(x, y)) {
+        ctx.fillStyle = "#a8dff1";
+        ctx.fillRect(sx + 2, sy + 2, tile - 4, tile - 4);
+        ctx.fillStyle = "#d8f5ff";
+        if ((x + y) % 2 === 0) {
+          ctx.fillRect(sx + 5, sy + 7, 10, 2);
+          ctx.fillRect(sx + 5, sy + 7, 2, 8);
+          ctx.fillRect(sx + 18, sy + 20, 9, 2);
+          ctx.fillRect(sx + 25, sy + 16, 2, 6);
+        }
+        return;
+      }
       if (areaId === "village" && !road) {
-        ctx.fillStyle = "#c7a46c";
+        ctx.fillStyle = "#d3a66c";
         if (isRiverTile(x - 1, y)) ctx.fillRect(sx, sy, 3, tile);
         if (isRiverTile(x + 1, y)) ctx.fillRect(sx + tile - 3, sy, 3, tile);
         if (isRiverTile(x, y - 1)) ctx.fillRect(sx, sy, tile, 3);
         if (isRiverTile(x, y + 1)) ctx.fillRect(sx, sy + tile - 3, tile, 3);
-        ctx.fillStyle = "#dec287";
-        if ((x * 5 + y * 3) % 7 === 0) ctx.fillRect(sx + 9, sy + 11, 2, 2);
+      } else if (areaId === "woods" && !road) {
+        ctx.fillStyle = "#d24d38";
+        if (isPondTile(x - 1, y)) ctx.fillRect(sx, sy, 4, tile);
+        if (isPondTile(x + 1, y)) ctx.fillRect(sx + tile - 4, sy, 4, tile);
+        if (isPondTile(x, y - 1)) ctx.fillRect(sx, sy, tile, 4);
+        if (isPondTile(x, y + 1)) ctx.fillRect(sx, sy + tile - 4, tile, 4);
       }
-      if ((areaId === "village" && isBridgeTile(x, y)) ||
-          (areaId === "woods" && x <= 10 && y >= 9 && y <= 11)) {
-        ctx.fillStyle = "#694a36";
-        ctx.fillRect(sx, sy + 2, tile, 28);
-        ctx.fillStyle = "#a96d42";
-        ctx.fillRect(sx + 2, sy + 4, tile - 4, 23);
-        ctx.fillStyle = "#dfb16d";
-        if (areaId === "village" && ((x >= 11 && x <= 12 && (y <= 4 || y >= 15)))) {
-          for (let plank = 1; plank < 6; plank++) ctx.fillRect(sx + 2, sy + plank * 4, tile - 4, 2);
-        } else {
-          for (let plank = 1; plank < 6; plank++) ctx.fillRect(sx + plank * 5, sy + 4, 2, 23);
-        }
-        ctx.fillStyle = "#493d34";
-        ctx.fillRect(sx, sy + 1, tile, 3);
-        ctx.fillRect(sx, sy + 28, tile, 3);
-      } else if (areaId === "village" && isBridgeTile(x, y)) {
-        ctx.fillStyle = "#493d34";
-        ctx.fillRect(sx, sy + 1, tile, 3);
-        ctx.fillRect(sx, sy + 28, tile, 3);
-      } else if (road) {
-        ctx.fillStyle = areaId === "ruins" ? "#a79b79" : "#aa9568";
-        if ((x + y) % 4 === 0) ctx.fillRect(sx + 8, sy + 13, 4, 2);
-        if ((x * 3 + y) % 7 === 0) ctx.fillRect(sx + 21, sy + 24, 3, 2);
-      } else if (areaId !== "ruins") {
-        const seed = (x * 17 + y * 29) % 11;
-        ctx.fillStyle = seed < 3 ? "#4c873b" : seed < 7 ? "#79a83f" : "#a4b847";
-        ctx.fillRect(sx + 4 + seed % 5, sy + 5 + (seed * 3) % 6, 4, 2);
-        ctx.fillRect(sx + 18 + (seed * 2) % 8, sy + 17 + seed % 7, 3, 3);
-        ctx.fillStyle = "#cfcb64";
+      if (!road && areaId === "village") {
+        ctx.fillStyle = seed < 4 ? "#92bc49" : "#abc94e";
+        ctx.fillRect(sx + 4 + seed % 5, sy + 5 + (seed * 3) % 6, 3, 2);
         if (seed === 1 || seed === 6) {
-          ctx.fillRect(sx + 25, sy + 6 + seed % 6, 2, 2);
-          ctx.fillRect(sx + 24, sy + 5 + seed % 6, 2, 2);
-          ctx.fillRect(sx + 26, sy + 5 + seed % 6, 2, 2);
+          ctx.fillStyle = "#f08ab9";
+          ctx.fillRect(sx + 24, sy + 6 + seed % 6, 3, 3);
+          ctx.fillRect(sx + 23, sy + 7 + seed % 6, 5, 1);
+          ctx.fillStyle = "#fff0aa";
+          ctx.fillRect(sx + 25, sy + 7 + seed % 6, 1, 1);
         }
         if (seed === 4 || seed === 9) {
-          ctx.fillStyle = "#db79ae";
-          ctx.fillRect(sx + 7, sy + 21, 2, 2);
-          ctx.fillRect(sx + 6, sy + 20, 2, 2);
-          ctx.fillRect(sx + 8, sy + 20, 2, 2);
-          ctx.fillStyle = "#f2df8a";
-          ctx.fillRect(sx + 7, sy + 20, 1, 1);
+          ctx.fillStyle = "#f4a8d0";
+          ctx.fillRect(sx + 14, sy + 22, 6, 4);
+          ctx.fillStyle = "#fff0bd";
+          ctx.fillRect(sx + 16, sy + 23, 2, 2);
         }
-      } else if ((x * 3 + y * 5) % 4 === 0) {
-        ctx.fillStyle = "#85866a";
-        ctx.fillRect(sx + 7, sy + 8, 3, 3);
-        ctx.fillRect(sx + 22, sy + 23, 2, 3);
+      } else if (!road && areaId === "woods") {
+        ctx.fillStyle = "#3a2633";
+        if (seed % 3 === 0) {
+          ctx.beginPath();
+          ctx.moveTo(sx + 4, sy + 5 + seed % 4);
+          ctx.lineTo(sx + 11, sy + 12 + seed % 3);
+          ctx.lineTo(sx + 8, sy + 19);
+          ctx.strokeStyle = "#3a2633";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = "#c55136";
+          ctx.fillRect(sx + 8, sy + 18, 5, 2);
+        }
+        if (seed === 1 || seed === 6) {
+          ctx.fillStyle = "#f36a2e";
+          ctx.fillRect(sx + 23, sy + 6 + seed % 5, 3, 2);
+          ctx.fillStyle = "#ffb34d";
+          ctx.fillRect(sx + 24, sy + 5 + seed % 5, 1, 1);
+        }
+        if ((x + y) % 4 === 0) {
+          ctx.fillStyle = "#f39a45";
+          ctx.fillRect(sx + 17, sy + 23, 2, 2);
+          ctx.fillRect(sx + 20, sy + 22, 1, 2);
+        }
+      } else if (!road && areaId === "glen") {
+        ctx.fillStyle = "#c4d7f0";
+        if (seed % 3 === 0) {
+          ctx.beginPath();
+          ctx.moveTo(sx + 4, sy + 7 + seed % 4);
+          ctx.lineTo(sx + 12, sy + 13 + seed % 3);
+          ctx.lineTo(sx + 8, sy + 20);
+          ctx.strokeStyle = "#a9c6e8";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(sx + 5, sy + 7 + seed % 4, 3, 1);
+        }
+        if (seed === 1 || seed === 6) {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(sx + 24, sy + 6 + seed % 5, 3, 2);
+          ctx.fillRect(sx + 25, sy + 5 + seed % 5, 1, 4);
+        }
+        if (seed === 4 || seed === 9) {
+          ctx.fillStyle = "#84c8e1";
+          ctx.fillRect(sx + 16, sy + 23, 3, 2);
+        }
+      } else if (!road) {
+        ctx.fillStyle = "#c7894d";
+        if (seed % 3 === 0) {
+          ctx.fillRect(sx + 5, sy + 9 + seed % 5, 7, 1);
+          ctx.fillRect(sx + 9, sy + 8 + seed % 5, 2, 1);
+          ctx.fillRect(sx + 7, sy + 10 + seed % 5, 3, 1);
+        }
+        if ((x + y) % 5 === 0) {
+          ctx.fillStyle = "#f3ce89";
+          ctx.fillRect(sx + 19, sy + 5 + seed % 8, 2, 1);
+          ctx.fillRect(sx + 21, sy + 4 + seed % 8, 1, 2);
+        }
+        if (seed === 1 || seed === 6) {
+          ctx.fillStyle = "#855541";
+          ctx.fillRect(sx + 23, sy + 7 + seed % 5, 4, 3);
+          ctx.fillStyle = "#e7b66e";
+          ctx.fillRect(sx + 24, sy + 7 + seed % 5, 2, 1);
+        }
+        if (seed === 4 || seed === 9) {
+          ctx.fillStyle = "#f2d08c";
+          ctx.fillRect(sx + 17, sy + 22, 5, 2);
+        }
+      }
+      if ((areaId === "village" && isBridgeTile(x, y)) ||
+          (areaId === "woods" && x <= 13 && ((y >= 9 && y <= 11) || (y >= 13 && y <= 15)))) {
+        if (areaId === "woods") {
+          ctx.fillStyle = "#382b38";
+          ctx.fillRect(sx, sy + 2, tile, 28);
+          ctx.fillStyle = "#72505a";
+          ctx.fillRect(sx + 2, sy + 4, tile - 4, 23);
+          ctx.fillStyle = "#a4594c";
+          for (let rock = 1; rock < 6; rock++) ctx.fillRect(sx + rock * 5, sy + 5, 2, 20);
+          ctx.fillStyle = "#f39339";
+          ctx.fillRect(sx + 3, sy + 27, 5, 2);
+          ctx.fillRect(sx + 23, sy + 5, 5, 2);
+        } else {
+          ctx.fillStyle = "#694a36";
+          ctx.fillRect(sx, sy + 2, tile, 28);
+          ctx.fillStyle = "#a96d42";
+          ctx.fillRect(sx + 2, sy + 4, tile - 4, 23);
+          ctx.fillStyle = "#dfb16d";
+          if (areaId === "village" && ((x >= 11 && x <= 12 && (y <= 4 || y >= 15)))) {
+            for (let plank = 1; plank < 6; plank++) ctx.fillRect(sx + 2, sy + plank * 4, tile - 4, 2);
+          } else {
+            for (let plank = 1; plank < 6; plank++) ctx.fillRect(sx + plank * 5, sy + 4, 2, 23);
+          }
+          ctx.fillStyle = "#493d34";
+          ctx.fillRect(sx, sy + 1, tile, 3);
+          ctx.fillRect(sx, sy + 28, tile, 3);
+        }
+      } else if (road) {
+        if (areaId === "woods") {
+          ctx.fillStyle = "#89504d";
+          if ((x + y) % 4 === 0) ctx.fillRect(sx + 8, sy + 13, 5, 2);
+          if ((x * 3 + y) % 7 === 0) ctx.fillStyle = "#f28b37";
+          ctx.fillRect(sx + 21, sy + 24, 3, 2);
+        } else if (areaId === "glen") {
+          ctx.fillStyle = "#f5f8ff";
+          if ((x + y) % 4 === 0) ctx.fillRect(sx + 8, sy + 13, 8, 2);
+          if ((x * 3 + y) % 7 === 0) ctx.fillRect(sx + 21, sy + 24, 4, 2);
+        } else if (areaId === "ruins") {
+          ctx.fillStyle = "#e9c17c";
+          if ((x + y) % 4 === 0) ctx.fillRect(sx + 8, sy + 13, 5, 2);
+          if ((x * 3 + y) % 7 === 0) ctx.fillRect(sx + 21, sy + 24, 3, 2);
+        } else {
+          ctx.fillStyle = "#efd095";
+          if ((x + y) % 4 === 0) ctx.fillRect(sx + 8, sy + 13, 4, 2);
+          if ((x * 3 + y) % 7 === 0) ctx.fillRect(sx + 21, sy + 24, 3, 2);
+        }
       }
     }
 
@@ -479,29 +624,141 @@ export function createLegacyGame(canvas, onRender) {
         ctx.fillRect(sx + 20, sy + 15, 5, 4);
         return;
       }
-      if (areaId !== "ruins") {
-        ctx.fillStyle = "#25402e";
-        ctx.fillRect(sx + 3, sy + 19, 26, 12);
-        ctx.fillStyle = "#276239";
-        ctx.fillRect(sx + 1, sy + 9, 16, 18);
-        ctx.fillRect(sx + 13, sy + 5, 18, 20);
-        ctx.fillStyle = "#378041";
-        ctx.fillRect(sx + 5, sy + 5, 13, 16);
-        ctx.fillRect(sx + 16, sy + 2, 12, 17);
-        ctx.fillStyle = "#55a046";
-        ctx.fillRect(sx + 7, sy + 4, 7, 7);
-        ctx.fillRect(sx + 18, sy + 1, 6, 7);
-        ctx.fillStyle = "#7a5940";
-        ctx.fillRect(sx + 14, sy + 20, 5, 10);
+      if (areaId === "village") {
+        const seed = (x * 7 + y * 11) % 3;
+        ctx.fillStyle = "#58624a";
+        ctx.fillRect(sx + 9, sy + 22, 15, 8);
+        ctx.fillStyle = "#986b58";
+        ctx.fillRect(sx + 15, sy + 14, 4, 13);
+        ctx.fillRect(sx + 13, sy + 24, 8, 3);
+        if (seed === 1) {
+          ctx.fillStyle = "#176d72";
+          ctx.fillRect(sx + 6, sy + 5, 19, 16);
+          ctx.fillRect(sx + 9, sy + 2, 13, 5);
+          ctx.fillStyle = "#57bbc0";
+          ctx.fillRect(sx + 10, sy + 4, 10, 8);
+          ctx.fillStyle = "#b2f2db";
+          ctx.fillRect(sx + 11, sy + 4, 5, 4);
+        } else {
+          ctx.fillStyle = "#b6438c";
+          ctx.fillRect(sx + 3, sy + 7, 13, 13);
+          ctx.fillRect(sx + 12, sy + 4, 14, 16);
+          ctx.fillRect(sx + 20, sy + 9, 10, 10);
+          ctx.fillStyle = "#ed72bb";
+          ctx.fillRect(sx + 5, sy + 7, 9, 8);
+          ctx.fillRect(sx + 14, sy + 4, 10, 9);
+          ctx.fillRect(sx + 21, sy + 9, 7, 6);
+          ctx.fillStyle = "#ffd3eb";
+          ctx.fillRect(sx + 7, sy + 8, 4, 3);
+          ctx.fillRect(sx + 16, sy + 5, 5, 3);
+          ctx.fillRect(sx + 23, sy + 10, 3, 2);
+          ctx.fillStyle = "#d956a3";
+          ctx.fillRect(sx + 7, sy + 19, 4, 4);
+          ctx.fillRect(sx + 18, sy + 19, 4, 7);
+        }
+        return;
+      }
+      if (areaId === "woods") {
+        const seed = (x * 13 + y * 7) % 4;
+        ctx.fillStyle = "#302630";
+        ctx.fillRect(sx + 3, sy + 22, 26, 8);
+        if (seed === 0) {
+          ctx.fillStyle = "#542e3b";
+          ctx.fillRect(sx + 4, sy + 11, 23, 15);
+          ctx.fillStyle = "#241e2b";
+          ctx.fillRect(sx + 8, sy + 5, 5, 18);
+          ctx.fillRect(sx + 13, sy + 2, 4, 22);
+          ctx.fillRect(sx + 17, sy + 8, 7, 16);
+          ctx.fillStyle = "#f06a32";
+          ctx.fillRect(sx + 7, sy + 22, 19, 5);
+          ctx.fillStyle = "#ffb344";
+          ctx.fillRect(sx + 11, sy + 21, 8, 2);
+        } else {
+          ctx.fillStyle = "#5b3440";
+          ctx.fillRect(sx + 2, sy + 13, 15, 13);
+          ctx.fillRect(sx + 13, sy + 9, 17, 17);
+          ctx.fillStyle = "#82404a";
+          ctx.fillRect(sx + 5, sy + 9, 12, 13);
+          ctx.fillRect(sx + 17, sy + 6, 10, 14);
+          ctx.fillStyle = "#eb6731";
+          ctx.fillRect(sx + 8, sy + 8, 5, 4);
+          ctx.fillRect(sx + 20, sy + 5, 4, 4);
+          ctx.fillStyle = "#f7a541";
+          ctx.fillRect(sx + 9, sy + 7, 2, 2);
+          ctx.fillRect(sx + 21, sy + 4, 2, 2);
+        }
+        return;
+      }
+      if (areaId === "glen") {
+        const seed = (x * 11 + y * 5) % 4;
+        if (seed === 0) {
+          ctx.fillStyle = "#8b9ab7";
+          ctx.beginPath();
+          ctx.ellipse(sx + 16, sy + 24, 13, 6, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#dceafa";
+          ctx.fillRect(sx + 6, sy + 15, 20, 10);
+          ctx.fillRect(sx + 9, sy + 12, 14, 5);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(sx + 9, sy + 14, 4, 3);
+          ctx.fillStyle = "#a1b2cf";
+          ctx.fillRect(sx + 7, sy + 23, 19, 2);
+        } else {
+          ctx.fillStyle = "#839bc7";
+          ctx.fillRect(sx + 4, sy + 21, 24, 9);
+          ctx.fillStyle = "#a9c9ee";
+          ctx.fillRect(sx + 5, sy + 12, 21, 15);
+          ctx.fillStyle = "#e1f3ff";
+          if (seed === 1) {
+            ctx.fillRect(sx + 8, sy + 12, 8, 13);
+            ctx.fillRect(sx + 12, sy + 5, 8, 19);
+            ctx.fillRect(sx + 18, sy + 10, 8, 15);
+          } else {
+            ctx.fillRect(sx + 10, sy + 5, 13, 18);
+            ctx.fillRect(sx + 14, sy + 2, 6, 6);
+          }
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(sx + 12, sy + 7, 3, 10);
+          ctx.fillRect(sx + 19, sy + 10, 2, 8);
+          ctx.fillStyle = "#8dd8ef";
+          ctx.fillRect(sx + 8, sy + 15, 4, 2);
+        }
         return;
       }
       if (areaId === "ruins") {
-        ctx.fillStyle = "#3d443d";
-        ctx.fillRect(sx + 2, sy + 5, 28, 25);
-        ctx.fillStyle = "#85816d";
-        ctx.fillRect(sx + 5, sy + 2, 22, 24);
-        ctx.fillStyle = "#b2a584";
-        ctx.fillRect(sx + 10, sy + 4, 12, 4);
+        const seed = (x * 9 + y * 13) % 3;
+        ctx.fillStyle = "#89573e";
+        ctx.fillRect(sx + 3, sy + 24, 26, 6);
+        ctx.fillStyle = "#b8784c";
+        const height = seed === 0 ? 17 : seed === 1 ? 23 : 28;
+        for (let layer = 0; layer < Math.ceil(height / 6); layer++) {
+          const layerY = sy + 24 - (layer + 1) * 6;
+          const inset = layer % 2;
+          ctx.fillRect(sx + 6 + inset, layerY, 20 - inset * 2, 6);
+          ctx.fillStyle = layer % 2 === 0 ? "#d49a5a" : "#c28653";
+          ctx.fillRect(sx + 7 + inset, layerY + 1, 18 - inset * 2, 3);
+          ctx.fillStyle = "#b8784c";
+        }
+        ctx.fillStyle = "#efbf75";
+        ctx.fillRect(sx + 9, sy + 24 - height, 5, 2);
+        ctx.fillStyle = "#754a3b";
+        ctx.fillRect(sx + 14, sy + 21, 4, 9);
+        return;
+      }
+      if (areaId === "village") {
+        ctx.fillStyle = "#9b5c69";
+        ctx.fillRect(sx + 3, sy + 21, 26, 9);
+        ctx.fillStyle = "#d976a4";
+        ctx.fillRect(sx + 2, sy + 12, 15, 16);
+        ctx.fillRect(sx + 13, sy + 8, 17, 18);
+        ctx.fillStyle = "#f39bc4";
+        ctx.fillRect(sx + 5, sy + 8, 12, 15);
+        ctx.fillRect(sx + 17, sy + 5, 10, 15);
+        ctx.fillStyle = "#ffcae2";
+        ctx.fillRect(sx + 8, sy + 7, 5, 4);
+        ctx.fillRect(sx + 20, sy + 4, 4, 4);
+        ctx.fillStyle = "#be7548";
+        ctx.fillRect(sx + 14, sy + 20, 5, 10);
         return;
       }
       ctx.fillStyle = "#263c35";
@@ -732,59 +989,65 @@ export function createLegacyGame(canvas, onRender) {
 
     function drawLandmark() {
       if (areaId === "village") {
-        const x = 13 * tile - camera.x;
-        const y = 8 * tile - camera.y;
-        ctx.fillStyle = "#684a36";
-        ctx.fillRect(x - 17, y - 9, 35, 25);
-        ctx.fillStyle = "#c58c51";
-        ctx.fillRect(x - 13, y - 8, 27, 20);
-        ctx.fillStyle = "#784b3d";
-        ctx.fillRect(x - 16, y - 13, 32, 7);
-        ctx.fillStyle = "#ebc179";
-        ctx.fillRect(x - 8, y - 6, 8, 7);
-        ctx.fillRect(x + 5, y - 5, 6, 6);
-        ctx.fillStyle = "#493d3b";
-        ctx.fillRect(x + 1, y + 3, 7, 13);
+        return;
       } else if (areaId === "woods") {
-        ctx.fillStyle = "#6b4b37";
-        ctx.fillRect(13 * tile - camera.x, 9 * tile - camera.y, 36, 5);
-        ctx.fillStyle = "#bd8650";
-        ctx.fillRect(13 * tile - camera.x, 9 * tile - camera.y + 2, 36, 3);
+        const x = 15 * tile - camera.x;
+        const y = 7 * tile - camera.y;
+        ctx.fillStyle = "#302631";
+        ctx.fillRect(x - 18, y + 20, 52, 12);
+        ctx.fillStyle = "#633844";
+        ctx.fillRect(x - 13, y + 13, 42, 13);
+        ctx.fillStyle = "#28222f";
+        ctx.fillRect(x - 8, y - 2, 9, 22);
+        ctx.fillRect(x + 3, y - 13, 8, 34);
+        ctx.fillRect(x + 14, y + 2, 11, 23);
+        ctx.fillStyle = "#f05c2b";
+        ctx.fillRect(x - 13, y + 24, 42, 6);
+        ctx.fillStyle = "#ffb447";
+        ctx.fillRect(x - 5, y + 22, 9, 3);
+        ctx.fillRect(x + 10, y + 23, 12, 2);
       } else if (areaId === "glen") {
-        const x = 9 * tile - camera.x;
-        const y = 4 * tile - camera.y;
-        ctx.fillStyle = "#293e3d";
-        ctx.fillRect(x - 13, y + 1, 52, 35);
-        ctx.fillStyle = "#6f9f87";
-        ctx.fillRect(x - 8, y + 5, 42, 24);
-        ctx.fillStyle = "#a8caa0";
-        ctx.fillRect(x + 2, y + 11, 9, 8);
+        const x = 10 * tile - camera.x;
+        const y = 5 * tile - camera.y;
+        ctx.fillStyle = "#8b9ab7";
+        ctx.fillRect(x - 19, y + 20, 52, 12);
+        ctx.fillStyle = "#87b8df";
+        ctx.fillRect(x - 12, y + 5, 39, 24);
+        ctx.fillStyle = "#c9f0ff";
+        ctx.fillRect(x - 7, y - 5, 9, 30);
+        ctx.fillRect(x + 2, y - 19, 10, 44);
+        ctx.fillRect(x + 13, y - 1, 9, 27);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(x - 5, y - 3, 3, 15);
+        ctx.fillRect(x + 5, y - 17, 3, 21);
+        ctx.fillRect(x + 16, y + 1, 3, 12);
+        ctx.fillStyle = "#8dd8ef";
+        ctx.fillRect(x - 12, y + 24, 39, 4);
       } else {
         const castleX = 17 * tile - camera.x;
         const castleY = 2 * tile - camera.y;
-        ctx.fillStyle = "#4c4850";
-        ctx.fillRect(castleX - 15, castleY + 6, 44, 36);
-        ctx.fillStyle = "#9a7860";
-        ctx.fillRect(castleX - 11, castleY + 10, 36, 29);
-        ctx.fillStyle = "#d2b17a";
-        ctx.fillRect(castleX - 4, castleY + 20, 7, 19);
-        ctx.fillRect(castleX + 9, castleY + 17, 7, 8);
-        ctx.fillRect(castleX - 24, castleY - 1, 12, 30);
-        ctx.fillRect(castleX + 20, castleY - 5, 12, 34);
-        ctx.fillStyle = "#695444";
-        ctx.fillRect(castleX - 26, castleY - 5, 16, 6);
-        ctx.fillRect(castleX + 18, castleY - 9, 16, 6);
-        ctx.fillRect(castleX + 2, castleY - 8, 12, 18);
-        ctx.fillStyle = "#b88b54";
-        ctx.fillRect(castleX + 5, castleY - 13, 6, 7);
+        ctx.fillStyle = "#86533e";
+        ctx.fillRect(castleX - 25, castleY + 22, 56, 17);
+        ctx.fillStyle = "#bd7949";
+        ctx.fillRect(castleX - 19, castleY + 12, 18, 19);
+        ctx.fillRect(castleX + 5, castleY + 8, 20, 23);
+        ctx.fillStyle = "#e1aa63";
+        ctx.fillRect(castleX - 16, castleY + 8, 12, 6);
+        ctx.fillRect(castleX + 9, castleY + 4, 12, 6);
+        ctx.fillRect(castleX - 1, castleY + 20, 7, 19);
+        ctx.fillStyle = "#f0ca83";
+        ctx.fillRect(castleX - 14, castleY + 10, 5, 2);
+        ctx.fillRect(castleX + 12, castleY + 6, 5, 2);
+        ctx.fillStyle = "#704238";
+        ctx.fillRect(castleX - 22, castleY + 36, 50, 4);
 
         const caveX = 15 * tile - camera.x;
         const caveY = 11 * tile - camera.y;
-        ctx.fillStyle = "#a39a7b";
+        ctx.fillStyle = "#d19b5f";
         ctx.fillRect(caveX - 13, caveY - 11, 28, 24);
-        ctx.fillStyle = "#514b46";
+        ctx.fillStyle = "#88533f";
         ctx.fillRect(caveX - 9, caveY - 6, 20, 18);
-        ctx.fillStyle = "#161d24";
+        ctx.fillStyle = "#392f36";
         ctx.fillRect(caveX - 6, caveY - 2, 14, 14);
       }
     }
@@ -792,22 +1055,45 @@ export function createLegacyGame(canvas, onRender) {
     function drawMountainTile(x, y) {
       const sx = x * tile - camera.x;
       const sy = y * tile - camera.y;
-      ctx.fillStyle = "#4b4c50";
-      ctx.fillRect(sx, sy + 18, tile, 14);
-      ctx.fillStyle = "#777671";
-      ctx.fillRect(sx + 2, sy + 10, 28, 18);
-      ctx.fillStyle = "#9b9687";
-      ctx.fillRect(sx + 7, sy + 4, 18, 18);
-      ctx.fillStyle = "#c9c3ad";
-      ctx.fillRect(sx + 13, sy + 1, 9, 9);
-      ctx.fillStyle = "#e0dac4";
-      if ((x + y) % 3 !== 0) {
-        ctx.fillRect(sx + 15, sy + 1, 6, 4);
-        ctx.fillRect(sx + 11, sy + 7, 5, 3);
+      const topEdge = !isMountainTile(x, y - 1);
+      const leftEdge = !isMountainTile(x - 1, y);
+      const rightEdge = !isMountainTile(x + 1, y);
+      const bottomEdge = !isMountainTile(x, y + 1);
+      ctx.fillStyle = "#a36343";
+      ctx.fillRect(sx, sy + 8, tile, tile - 8);
+      ctx.fillStyle = "#c0804b";
+      ctx.fillRect(sx + 2, sy + 5, tile - 4, tile - 9);
+      ctx.fillStyle = "#e1ac66";
+      ctx.fillRect(sx + 2, sy + 3, tile - 4, 7);
+      ctx.fillStyle = "#f0c681";
+      ctx.fillRect(sx + 5, sy + 4, tile - 12, 2);
+      ctx.fillStyle = "#bd7849";
+      for (let layer = 0; layer < 3; layer++) {
+        const layerY = sy + 13 + layer * 6;
+        ctx.fillRect(sx + (layer % 2 ? 1 : 4), layerY, tile - (layer % 2 ? 7 : 9), 2);
       }
-      ctx.fillStyle = "#5f615f";
-      ctx.fillRect(sx + 21, sy + 17, 4, 7);
-      ctx.fillRect(sx + 5, sy + 23, 6, 3);
+      if (topEdge) {
+        ctx.fillStyle = "#f4d08f";
+        ctx.fillRect(sx + 2, sy + 1, tile - 4, 2);
+        if ((x + y) % 3 !== 0) ctx.fillRect(sx + 8, sy + 3, 9, 2);
+      }
+      if (leftEdge) {
+        ctx.fillStyle = "#efc17c";
+        ctx.fillRect(sx, sy + 5, 2, 7);
+      }
+      if (rightEdge) {
+        ctx.fillStyle = "#824c3b";
+        ctx.fillRect(sx + tile - 3, sy + 8, 3, tile - 8);
+      }
+      if (bottomEdge) {
+        ctx.fillStyle = "#704238";
+        ctx.fillRect(sx, sy + tile - 3, tile, 3);
+      }
+      ctx.fillStyle = "#a25d42";
+      if ((x * 3 + y) % 4 === 0) {
+        ctx.fillRect(sx + 11, sy + 16, 2, 4);
+        ctx.fillRect(sx + 9, sy + 20, 4, 2);
+      }
     }
 
     function drawChest() {
@@ -836,15 +1122,15 @@ export function createLegacyGame(canvas, onRender) {
       const nodeHeight = expanded ? 62 : 15;
       const headerHeight = expanded ? 12 : 5;
       const mapAreas = expanded ? [
-        { id: "village", label: "NOODLEWICK", x: 15, y: 101, color: "#82794a", detail: "#d2a45e" },
-        { id: "woods", label: "UPSIDE-DOWN WOODS", x: 145, y: 101, color: "#376347", detail: "#85a95b" },
-        { id: "ruins", label: "TEACUP CATACOMBS", x: 275, y: 101, color: "#706553", detail: "#b6a27a" },
-        { id: "glen", label: "HUSH-HUSH GLEN", x: 145, y: 184, color: "#42705c", detail: "#76b5aa" }
+        { id: "village", label: "CANDY MEADOWS", x: 15, y: 101, color: "#c9e66d", detail: "#ec9a72" },
+        { id: "woods", label: "CINDERFALL", x: 145, y: 101, color: "#673744", detail: "#f28b37" },
+        { id: "ruins", label: "SAFFRON RUINS", x: 275, y: 101, color: "#dfa85f", detail: "#89573e" },
+        { id: "glen", label: "FROSTGLASS GLEN", x: 145, y: 184, color: "#d8e2f6", detail: "#84c8e1" }
       ] : [
-        { id: "village", label: "VIL", x: 2, y: 17, color: "#82794a", detail: "#d2a45e" },
-        { id: "woods", label: "WDS", x: 25, y: 17, color: "#376347", detail: "#85a95b" },
-        { id: "ruins", label: "RNS", x: 48, y: 17, color: "#706553", detail: "#b6a27a" },
-        { id: "glen", label: "GLN", x: 25, y: 40, color: "#42705c", detail: "#76b5aa" }
+        { id: "village", label: "CND", x: 2, y: 17, color: "#c9e66d", detail: "#ec9a72" },
+        { id: "woods", label: "CIN", x: 25, y: 17, color: "#673744", detail: "#f28b37" },
+        { id: "ruins", label: "SAF", x: 48, y: 17, color: "#dfa85f", detail: "#89573e" },
+        { id: "glen", label: "ICE", x: 25, y: 40, color: "#d8e2f6", detail: "#84c8e1" }
       ];
       const current = mapAreas.find((item) => item.id === areaId);
       if (expanded) {
@@ -1270,7 +1556,7 @@ export function createLegacyGame(canvas, onRender) {
         drawPanel(145, 275, 190, 31);
         ctx.fillStyle = "#fff0aa";
         ctx.font = "10px monospace";
-        ctx.fillText(areaId === "woods" && player.x > 26 * tile ? "EAST  SUNKEN RUINS" : "E  TALK / INTERACT", 163, 295);
+        ctx.fillText(areaId === "woods" && player.x > 26 * tile ? "EAST  SAFFRON RUINS" : "E  TALK / INTERACT", 163, 295);
       }
       if (messageTimer > 0) {
         drawPanel(46, 229, 388, 41);

@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { createLegacyGame } from "./legacy-game.js";
+import titleBackgroundUrl from "../title-background.png";
 import "./style.css";
 
 const GAME_WIDTH = 480;
@@ -16,7 +17,7 @@ class AdventureScene extends Phaser.Scene {
     const frame = this.textures.createCanvas("legacy-frame", GAME_WIDTH, GAME_HEIGHT);
     if (!frame) throw new Error("Could not create the game frame texture.");
     this.add.image(0, 0, frame).setOrigin(0);
-    this.legacyGame = createLegacyGame(frame.getCanvas(), () => frame.refresh());
+    this.legacyGame = createLegacyGame(frame.getCanvas(), () => frame.refresh(), titleBackgroundUrl);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.legacyGame?.destroy();
       this.legacyGame = undefined;

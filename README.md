@@ -1,8 +1,11 @@
-# The Sunstone Trail
+# The Moonbell Mix-Up
 
-An original, top-down browser action-RPG prototype. Speak with Elder Rowan,
-follow the road east, defeat the dusklings guarding the Sunstone, then bring it
-back to the village.
+A whimsical, original top-down pixel-art adventure. The moon has misplaced its
+bedtime bell, and Noodlewick's residents are having a very long day. Set out
+with Pip, your floating lantern-sprite companion. Talk to Auntie Fizz, chase
+the grumble-moths through the Upside-Down Woods, find the bell in the Teacup
+Catacombs, and bring it home before the moon gets cranky. There is also a
+secret glen, a suspicious chest, and a fizzy plum tonic.
 
 ## Run
 
@@ -11,6 +14,11 @@ Open `index.html` in a modern browser. No install or build step is required.
 ## Controls
 
 - Move: `WASD` or arrow keys
-- Pulse attack: `Z` or `Space`
+- Fire a star spark (hold to fire): `Z` or `Space`
 - Talk / interact: `E`
+- Use a fizzy plum tonic: `Q`
 - Start or retry: `Enter`
+
+The small map in the top-right shows your current area and position. In the
+Upside-Down Woods, look for the northern trail to find the optional Hush-Hush
+Glen.

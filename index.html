@@ -104,7 +104,8 @@
         width: 24,
         height: 18,
         terrain: "village",
-        obstacles: [[8, 5], [9, 5], [8, 6], [15, 5], [16, 5], [15, 6],
+        obstacles: [[1, 2], [3, 3], [20, 2], [21, 3], [2, 15], [4, 16], [19, 15], [21, 16],
+          [8, 5], [9, 5], [8, 6], [15, 5], [16, 5], [15, 6],
           [7, 13], [8, 13], [10, 13], [11, 13], [7, 14], [8, 14], [10, 14], [11, 14],
           [16, 12], [17, 12], [16, 13]],
         gates: [
@@ -119,10 +120,11 @@
         height: 22,
         terrain: "woods",
         obstacles: [
-          [1, 1], [3, 1], [5, 1], [8, 1], [10, 1], [12, 1], [18, 1], [21, 1], [24, 1], [27, 1],
+          [1, 1], [3, 1], [5, 1], [8, 1], [10, 1], [18, 1], [21, 1], [24, 1], [27, 1],
           [0, 3], [2, 3], [5, 3], [8, 3], [19, 3], [22, 3], [26, 3], [28, 3],
-          [1, 5], [4, 5], [20, 5], [23, 5], [27, 5], [29, 5],
-          [19, 15], [22, 15], [26, 15], [28, 15], [2, 18], [5, 18], [9, 18], [14, 18], [18, 18], [23, 18], [27, 18],
+          [1, 5], [4, 5], [20, 5], [23, 5], [27, 5], [29, 5], [2, 7], [7, 7], [21, 7], [26, 7],
+          [2, 13], [5, 13], [8, 13], [19, 13], [22, 13], [27, 13],
+          [19, 15], [22, 15], [26, 15], [28, 15], [2, 18], [5, 18], [9, 18], [18, 18], [23, 18], [27, 18],
           [12, 2], [17, 2], [12, 3], [17, 3], [12, 5], [17, 5], [12, 6], [17, 6],
           [12, 14], [17, 14], [12, 16], [17, 16], [12, 18], [17, 18], [12, 19], [17, 19]
         ],
@@ -229,18 +231,21 @@
 
     function isBridgeTile(x, y) {
       if (areaId !== "village") return false;
-      return (x >= 10 && x <= 13 && y <= 5) ||
-        (x >= 10 && x <= 13 && y >= 13) ||
-        (x <= 7 && y >= 8 && y <= 11) ||
-        (x >= 16 && y >= 8 && y <= 11);
+      return ((x === 11 || x === 12) && (y === 3 || y === 4 || y === 15 || y === 16)) ||
+        ((x === 5 || x === 6 || x === 18 || x === 19) && (y === 9 || y === 10));
     }
 
     function isRiverTile(x, y) {
-      const island = x >= 7 && x <= 17 && y >= 5 && y <= 13;
-      return !island && !isBridgeTile(x, y);
+      if (isBridgeTile(x, y)) return false;
+      const westBend = x >= 5 && x <= 6 && y >= 4 && y <= 14;
+      const northBend = y >= 3 && y <= 4 && x >= 6 && x <= 18;
+      const eastBend = x >= 18 && x <= 19 && y >= 4 && y <= 15;
+      const southBend = y >= 15 && y <= 16 && x >= 7 && x <= 18;
+      return westBend || northBend || eastBend || southBend;
     }
 
     function isPondTile(x, y) {
+      if (x <= 10 && y >= 9 && y <= 11) return false;
       const dx = (x - 5) / 4.3;
       const dy = (y - 10) / 3.2;
       return dx * dx + dy * dy < 1;
@@ -465,7 +470,8 @@
         return;
       }
       const road = areaId === "village"
-        ? (y >= 8 && y <= 10 && x >= 7) || (x >= 10 && x <= 13)
+        ? ((y >= 9 && y <= 10) || (y === 8 && x >= 7)) ||
+          (x >= 11 && x <= 12)
         : areaId === "woods"
           ? (y >= 9 && y <= 11) || (x >= 10 && x <= 14 && y <= 10)
           : areaId === "glen"
@@ -480,15 +486,31 @@
       const palette = terrainColors[area().terrain];
       ctx.fillStyle = road ? palette[2] : ((x * 7 + y * 13) % 5 === 0 ? palette[1] : palette[0]);
       ctx.fillRect(sx, sy, tile, tile);
-      if (areaId === "village" && isBridgeTile(x, y)) {
+      if (areaId === "village" && !road) {
+        ctx.fillStyle = "#c7a46c";
+        if (isRiverTile(x - 1, y)) ctx.fillRect(sx, sy, 3, tile);
+        if (isRiverTile(x + 1, y)) ctx.fillRect(sx + tile - 3, sy, 3, tile);
+        if (isRiverTile(x, y - 1)) ctx.fillRect(sx, sy, tile, 3);
+        if (isRiverTile(x, y + 1)) ctx.fillRect(sx, sy + tile - 3, tile, 3);
+        ctx.fillStyle = "#dec287";
+        if ((x * 5 + y * 3) % 7 === 0) ctx.fillRect(sx + 9, sy + 11, 2, 2);
+      }
+      if ((areaId === "village" && isBridgeTile(x, y)) ||
+          (areaId === "woods" && x <= 10 && y >= 9 && y <= 11)) {
         ctx.fillStyle = "#694a36";
         ctx.fillRect(sx, sy + 2, tile, 28);
         ctx.fillStyle = "#a96d42";
         ctx.fillRect(sx + 2, sy + 4, tile - 4, 23);
         ctx.fillStyle = "#dfb16d";
-        for (let plank = 1; plank < 6; plank++) {
-          ctx.fillRect(sx + plank * 5, sy + 4, 2, 23);
+        if (areaId === "village" && ((x >= 11 && x <= 12 && (y <= 4 || y >= 15)))) {
+          for (let plank = 1; plank < 6; plank++) ctx.fillRect(sx + 2, sy + plank * 4, tile - 4, 2);
+        } else {
+          for (let plank = 1; plank < 6; plank++) ctx.fillRect(sx + plank * 5, sy + 4, 2, 23);
         }
+        ctx.fillStyle = "#493d34";
+        ctx.fillRect(sx, sy + 1, tile, 3);
+        ctx.fillRect(sx, sy + 28, tile, 3);
+      } else if (areaId === "village" && isBridgeTile(x, y)) {
         ctx.fillStyle = "#493d34";
         ctx.fillRect(sx, sy + 1, tile, 3);
         ctx.fillRect(sx, sy + 28, tile, 3);
@@ -884,29 +906,118 @@
     }
 
     function drawAreaMap() {
-      const x = 409;
-      const y = 10;
+      const x = 407;
+      const y = 8;
+      const nodeWidth = 19;
+      const nodeHeight = 15;
       const mapAreas = [
-        { id: "woods", x: 1, y: 11, width: 14, height: 9 },
-        { id: "village", x: 22, y: 11, width: 14, height: 9 },
-        { id: "ruins", x: 43, y: 11, width: 14, height: 9 },
-        { id: "glen", x: 22, y: 1, width: 14, height: 8 }
+        { id: "village", label: "VIL", x: 2, y: 17, color: "#82794a", detail: "#d2a45e" },
+        { id: "woods", label: "WDS", x: 25, y: 17, color: "#376347", detail: "#85a95b" },
+        { id: "ruins", label: "RNS", x: 48, y: 17, color: "#706553", detail: "#b6a27a" },
+        { id: "glen", label: "GLN", x: 25, y: 40, color: "#42705c", detail: "#76b5aa" }
       ];
-      ctx.fillStyle = "#17221dbb";
-      ctx.fillRect(x - 4, y - 3, 65, 34);
-      for (const mapArea of mapAreas) {
-        ctx.fillStyle = mapArea.id === areaId ? "#ead78b" : "#708775";
-        ctx.fillRect(x + mapArea.x, y + mapArea.y, mapArea.width, mapArea.height);
-      }
-      ctx.fillStyle = "#9ca889";
-      ctx.fillRect(x + 15, y + 15, 7, 2);
-      ctx.fillRect(x + 36, y + 15, 7, 2);
-      ctx.fillRect(x + 28, y + 9, 2, 2);
-      ctx.fillStyle = "#d87366";
       const current = mapAreas.find((item) => item.id === areaId);
-      const mapX = x + current.x + 2 + player.x / (area().width * tile) * (current.width - 4);
-      const mapY = y + current.y + 2 + player.y / (area().height * tile) * (current.height - 4);
-      ctx.fillRect(mapX - 1, mapY - 1, 3, 3);
+      const panelWidth = 70;
+      const panelHeight = 58;
+
+      ctx.fillStyle = "#101916";
+      ctx.fillRect(x - 2, y - 2, panelWidth, panelHeight);
+      ctx.strokeStyle = "#a4ad83";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x - 1.5, y - 1.5, panelWidth - 1, panelHeight - 1);
+      ctx.fillStyle = "#f2ca70";
+      ctx.font = "bold 6px monospace";
+      ctx.textAlign = "left";
+      ctx.fillText("WORLD MAP", x + 2, y + 7);
+      ctx.fillStyle = "#8ebfc0";
+      ctx.fillRect(x + 48, y + 3, 3, 3);
+      ctx.fillStyle = "#c7d1bb";
+      ctx.font = "5px monospace";
+      ctx.fillText("YOU", x + 53, y + 7);
+
+      const center = (mapArea) => ({
+        x: x + mapArea.x + nodeWidth / 2,
+        y: y + mapArea.y + nodeHeight / 2
+      });
+      const routes = [
+        ["village", "woods"],
+        ["woods", "ruins"],
+        ["woods", "glen"],
+        ["village", "glen"]
+      ];
+      for (const [fromId, toId] of routes) {
+        const from = center(mapAreas.find((item) => item.id === fromId));
+        const to = center(mapAreas.find((item) => item.id === toId));
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.strokeStyle = "#526455";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.strokeStyle = "#d3b96c";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        const middleX = (from.x + to.x) / 2;
+        const middleY = (from.y + to.y) / 2;
+        ctx.fillStyle = "#f2ca70";
+        ctx.fillRect(middleX - 1, middleY - 1, 2, 2);
+      }
+
+      for (const mapArea of mapAreas) {
+        const nodeX = x + mapArea.x;
+        const nodeY = y + mapArea.y;
+        ctx.fillStyle = "#111916";
+        ctx.fillRect(nodeX - 1, nodeY - 1, nodeWidth + 2, nodeHeight + 2);
+        ctx.fillStyle = mapArea.id === areaId ? "#f2ca70" : "#758675";
+        ctx.fillRect(nodeX - 1, nodeY - 1, nodeWidth + 2, nodeHeight + 2);
+        ctx.fillStyle = mapArea.color;
+        ctx.fillRect(nodeX, nodeY, nodeWidth, nodeHeight);
+
+        ctx.fillStyle = "#17221d";
+        ctx.fillRect(nodeX, nodeY, nodeWidth, 5);
+        ctx.fillStyle = "#f4edcc";
+        ctx.font = "5px monospace";
+        ctx.fillText(mapArea.label, nodeX + 2, nodeY + 4);
+
+        ctx.fillStyle = mapArea.detail;
+        if (mapArea.id === "village") {
+          ctx.fillRect(nodeX + 3, nodeY + 8, 4, 3);
+          ctx.fillRect(nodeX + 12, nodeY + 7, 3, 4);
+          ctx.fillRect(nodeX + 8, nodeY + 12, 7, 1);
+        } else if (mapArea.id === "woods") {
+          ctx.fillRect(nodeX + 3, nodeY + 7, 4, 4);
+          ctx.fillRect(nodeX + 12, nodeY + 9, 4, 3);
+          ctx.fillRect(nodeX + 8, nodeY + 12, 2, 1);
+        } else if (mapArea.id === "ruins") {
+          ctx.fillRect(nodeX + 3, nodeY + 10, 5, 3);
+          ctx.fillRect(nodeX + 7, nodeY + 7, 5, 6);
+          ctx.fillRect(nodeX + 12, nodeY + 9, 4, 4);
+        } else {
+          ctx.fillRect(nodeX + 3, nodeY + 8, 5, 3);
+          ctx.fillRect(nodeX + 11, nodeY + 7, 4, 4);
+          ctx.fillRect(nodeX + 8, nodeY + 12, 6, 1);
+        }
+      }
+
+      const playerX = x + current.x + 1 +
+        Math.max(0, Math.min(1, player.x / (area().width * tile))) * (nodeWidth - 2);
+      const playerY = y + current.y + 6 +
+        Math.max(0, Math.min(1, player.y / (area().height * tile))) * (nodeHeight - 7);
+      ctx.fillStyle = "#8ebfc0";
+      ctx.fillRect(Math.round(playerX) - 1, Math.round(playerY) - 1, 3, 3);
+
+      let objective = null;
+      if (areaId === "village" && (questStage === 0 || questStage === 2)) objective = guide;
+      if (areaId === "ruins" && questStage === 1) objective = relic;
+      if (objective) {
+        const objectiveX = x + current.x + 1 +
+          objective.x / (area().width * tile) * (nodeWidth - 2);
+        const objectiveY = y + current.y + 6 +
+          objective.y / (area().height * tile) * (nodeHeight - 7);
+        ctx.fillStyle = "#f2ca70";
+        ctx.fillRect(Math.round(objectiveX) - 1, Math.round(objectiveY) - 1, 3, 3);
+      }
+      ctx.textAlign = "left";
     }
 
     function drawGates() {
@@ -1159,7 +1270,9 @@
           }
         }
       }
-      for (const [x, y] of area().obstacles) drawObstacle(x, y);
+      for (const [x, y] of area().obstacles) {
+        if (areaId !== "ruins" || !isMountainTile(x, y)) drawObstacle(x, y);
+      }
       drawLandmark();
       drawGates();
       drawChest();
